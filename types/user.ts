@@ -12,6 +12,7 @@ export interface AdminUserDTO {
   attemptsUsed: number;
   attemptsLimit: number;
   createdAt: string;
+  environment?: string;
 }
 
 // Backward-compatible alias for existing components
