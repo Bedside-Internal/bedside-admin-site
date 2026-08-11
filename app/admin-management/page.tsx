@@ -41,13 +41,20 @@ export default function AdminManagementPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-7xl px-6 py-8">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="font-poppins text-2xl font-bold text-ink">
-              Scoped Privileges
-            </h1>
-            <p className="mt-1 text-sm text-ink/50">
-              Manage admin roles and console access permissions.
-            </p>
+          <div className="mb-8 flex items-center gap-3">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="font-poppins text-2xl font-bold text-ink">
+                  Scoped Privileges
+                </h1>
+                <span className="rounded-full bg-violet/15 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-violet">
+                  SECURITY
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-ink/50">
+                Manage admin roles and console access permissions.
+              </p>
+            </div>
           </div>
 
           {/* Two-Column Layout */}
