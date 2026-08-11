@@ -5,7 +5,10 @@ import {
     UpdateRoleInput,
     GrantAdminAccessInput,
     UpdateAdminAccessInput,
-    ApiErrorResponse // Assuming this was added in the previous task
+    ApiErrorResponse, // Assuming this was added in the previous task
+    AdminFeature,
+    FeatureType,
+    UpsertFeatureInput
 } from "@/types/admin";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -111,6 +114,45 @@ export async function updateAdminAccess(token: string | null, id: string, input:
 
 export async function revokeAdminAccess(token: string | null, id: string): Promise<void> {
     const res = await fetch(`${API_BASE_URL}/api/admin/admins/${id}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+    });
+    return handleResponse<void>(res);
+}
+
+// feature flags (tracks + formats)
+export async function listFeatures(token: string | null, type?: FeatureType): Promise<AdminFeature[]> {
+    const params = type ? `?type=${type}` : "";
+    const res = await fetch(`${API_BASE_URL}/api/admin/feature-flags${params}`, {
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+    });
+    return handleResponse<AdminFeature[]>(res);
+}
+
+// upsert: create (new key) or edit (existing key) — same PATCH does both
+export async function upsertFeature(token: string | null, key: string, input: UpsertFeatureInput): Promise<AdminFeature> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/feature-flags/${key}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+        body: JSON.stringify(input),
+    });
+    return handleResponse<AdminFeature>(res);
+}
+
+export async function deleteFeature(token: string | null, key: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/feature-flags/${key}`, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",

@@ -57,3 +57,36 @@ export interface UpdateAdminAccessInput {
 export interface ApiErrorResponse {
     error: string;
 }
+
+export type FeatureType = "track" | "format";
+
+export interface AdminFeature {
+    _id: string;
+    type: FeatureType;
+    parent_track: string | null;
+    order: number;
+    icon: string;
+    title: string;
+    subtitle: string;
+    href: string | null;
+    enabled: boolean;
+    killed: boolean;
+    kill_reason: string | null;
+    killed_at: string | null;
+    killed_by: string | null;
+    created_by: string;
+    updated_by: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface UpsertFeatureInput {
+    type: FeatureType;
+    parent_track?: string | null;
+    order?: number;
+    icon?: string;
+    title: string;
+    subtitle?: string;
+    href?: string | null;
+    enabled?: boolean;
+}
