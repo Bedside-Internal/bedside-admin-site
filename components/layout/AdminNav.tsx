@@ -12,7 +12,7 @@ export default function AdminNav() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-ink/10 bg-cream">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-14 max-w-8xl items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <span className="font-poppins text-lg font-bold text-ink">
             Bedside Admin

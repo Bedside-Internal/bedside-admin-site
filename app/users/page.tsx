@@ -88,7 +88,13 @@ export default function UsersPage() {
 
       <main className="flex flex-1 overflow-hidden">
         {/* Left: List area */}
-        <div className="flex flex-1 flex-col overflow-y-auto">
+        <div 
+            className="flex flex-1 flex-col overflow-y-auto"
+            onClick={(e) => {
+                // Deselect if clicking directly on the background, not a child
+                if (e.target === e.currentTarget) setSelectedUserId(null);
+            }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-ink/10 px-6 py-5">
             <h1 className="font-poppins text-xl font-bold text-ink">
@@ -105,11 +111,13 @@ export default function UsersPage() {
           </div>
 
           {/* Table */}
-          <UserTable
-            users={filteredUsers}
-            selectedUserId={selectedUserId}
-            onSelectUser={setSelectedUserId}
-          />
+          <div className="pt-4">
+            <UserTable
+              users={filteredUsers}
+              selectedUserId={selectedUserId}
+              onSelectUser={setSelectedUserId}
+            />
+          </div>
         </div>
 
         {/* Right: Detail panel */}

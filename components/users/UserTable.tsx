@@ -49,7 +49,7 @@ export default function UserTable({
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-ink/10 text-xs font-medium uppercase tracking-wide text-ink/40">
-            <th className="pb-3 pr-4 pl-4">Email</th>
+            <th className="pb-3 pr-4 pl-6">Email</th>
             <th className="pb-3 pr-4">First Name</th>
             <th className="pb-3 pr-4">Tier</th>
             <th className="pb-3 pr-4">Paid Until</th>
@@ -70,7 +70,7 @@ export default function UserTable({
                     : "hover:bg-sand/60"
                 }`}
               >
-                <td className="py-3 pr-4 pl-4 font-medium text-ink">
+                <td className="py-3 pr-4 pl-6 font-medium text-ink">
                   {user.email}
                 </td>
                 <td className="py-3 pr-4 text-ink/70">{user.firstName}</td>
