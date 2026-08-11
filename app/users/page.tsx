@@ -1,86 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { User, UpdateUserPayload, GrantAttemptsPayload } from "@/types/user";
+import { getUsers, updateUser, grantAttempts } from "@/lib/api/users";
 import AdminNav from "@/components/layout/AdminNav";
 import UserSearch from "@/components/users/UserSearch";
 import UserTable from "@/components/users/UserTable";
 import UserDetailPanel from "@/components/users/UserDetailPanel";
 
-// --- Mock data for visual testing ---
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    clerkId: "user_2XYZabcdef123456",
-    email: "alice@example.com",
-    firstName: "Alice",
-    lastName: "Nguyen",
-    tier: "paid",
-    paidUntil: "2025-08-15T00:00:00.000Z",
-    attemptsUsed: 12,
-    attemptsLimit: 20,
-    createdAt: "2024-11-02T10:30:00.000Z",
-  },
-  {
-    id: "2",
-    clerkId: "user_2XYZabcdef789012",
-    email: "bob@test.com",
-    firstName: "Bob",
-    tier: "free",
-    paidUntil: null,
-    attemptsUsed: 3,
-    attemptsLimit: 5,
-    createdAt: "2025-01-14T08:00:00.000Z",
-  },
-  {
-    id: "3",
-    clerkId: "user_2XYZabcdef345678",
-    email: "carol@bedside.ai",
-    firstName: "Carol",
-    lastName: "Admin",
-    tier: "admin",
-    paidUntil: null,
-    attemptsUsed: 0,
-    attemptsLimit: 999,
-    createdAt: "2024-06-01T12:00:00.000Z",
-  },
-  {
-    id: "4",
-    clerkId: "user_2XYZabcdef901234",
-    email: "dave@company.org",
-    firstName: "Dave",
-    tier: "paid",
-    paidUntil: "2025-02-01T00:00:00.000Z",
-    attemptsUsed: 20,
-    attemptsLimit: 20,
-    createdAt: "2024-09-20T15:45:00.000Z",
-  },
-];
-// -------------------------------
-
 export default function UsersPage() {
+  const { getToken, isLoaded } = useAuth();
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  // TODO: Wrap with Clerk admin-role check before production
-  // e.g., useAuth() -> check publicMetadata.role === "admin" -> redirect
+  // TODO: Add strict admin-role check here if publicMetadata.role === "admin" 
+  // is set in Clerk. Otherwise, rely on backend 403.
 
-  const filteredUsers = MOCK_USERS.filter(
-    (u) =>
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.clerkId.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const data = await getUsers(token, search);
+      setUsers(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load users");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getToken, search]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      fetchUsers();
+    }
+  }, [isLoaded, fetchUsers]);
+
+  const handleUpdate = async (id: string, payload: UpdateUserPayload) => {
+    try {
+      const token = await getToken();
+      await updateUser(token, id, payload);
+      // Refresh list to get updated computed fields (like attempts)
+      await fetchUsers(); 
+    } catch (err: any) {
+      alert(err.message || "Failed to update user");
+    }
+  };
+
+  const handleGrant = async (id: string, payload: GrantAttemptsPayload) => {
+    try {
+      const token = await getToken();
+      await grantAttempts(token, id, payload);
+      await fetchUsers(); // Refresh to show new limit
+    } catch (err: any) {
+      alert(err.message || "Failed to grant attempts");
+    }
+  };
+
+  const filteredUsers = users; // Search is now handled server-side
 
   const selectedUser =
-    MOCK_USERS.find((u) => u.id === selectedUserId) ?? null;
-
-  const handleUpdate = (id: string, payload: UpdateUserPayload) => {
-    console.log("TODO: API call updateUser", id, payload);
-  };
-
-  const handleGrant = (id: string, payload: GrantAttemptsPayload) => {
-    console.log("TODO: API call grantAttempts", id, payload);
-  };
+    users.find((u) => u.id === selectedUserId) ?? null;
 
   return (
     <div className="flex min-h-screen flex-col bg-cream font-dm text-ink">
@@ -88,12 +73,11 @@ export default function UsersPage() {
 
       <main className="flex flex-1 overflow-hidden">
         {/* Left: List area */}
-        <div 
-            className="flex flex-1 flex-col overflow-y-auto"
-            onClick={(e) => {
-                // Deselect if clicking directly on the background, not a child
-                if (e.target === e.currentTarget) setSelectedUserId(null);
-            }}
+        <div
+          className="flex flex-1 flex-col overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedUserId(null);
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-ink/10 px-6 py-5">
@@ -101,7 +85,7 @@ export default function UsersPage() {
               Users &amp; Support
             </h1>
             <span className="text-sm text-ink/50">
-              {filteredUsers.length} of {MOCK_USERS.length}
+              {users.length} of {users.length}
             </span>
           </div>
 
@@ -110,13 +94,25 @@ export default function UsersPage() {
             <UserSearch value={search} onChange={setSearch} />
           </div>
 
-          {/* Table */}
+          {/* Content Area */}
           <div className="pt-4">
-            <UserTable
-              users={filteredUsers}
-              selectedUserId={selectedUserId}
-              onSelectUser={setSelectedUserId}
-            />
+            {error && (
+              <div className="mx-6 mb-4 rounded-lg border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-coral">
+                {error}
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="py-16 text-center text-sm text-ink/40">
+                Loading users...
+              </div>
+            ) : (
+              <UserTable
+                users={filteredUsers}
+                selectedUserId={selectedUserId}
+                onSelectUser={setSelectedUserId}
+              />
+            )}
           </div>
         </div>
 
