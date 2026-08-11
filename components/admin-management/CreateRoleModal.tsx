@@ -1,18 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AdminResource, AdminAction, PermissionMatrix } from "@/types/admin";
-
-const RESOURCES: AdminResource[] = [
-  "users",
-  "content",
-  "ai_generation",
-  "feature_flags",
-  "billing",
-  "admin_management",
-];
-
-const ACTIONS: AdminAction[] = ["read", "write", "delete"];
+import { PermissionMatrix } from "@/types/admin";
+import PermissionGrid from "./PermissionGrid";
 
 interface CreateRoleModalProps {
   isOpen: boolean;
@@ -25,12 +15,6 @@ interface CreateRoleModalProps {
   isSubmitting: boolean;
 }
 
-function formatResourceHeader(resource: string): string {
-  return resource
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
-}
-
 export default function CreateRoleModal({
   isOpen,
   onClose,
@@ -39,31 +23,22 @@ export default function CreateRoleModal({
 }: CreateRoleModalProps) {
   const [label, setLabel] = useState("");
   const [slug, setSlug] = useState("");
-  const [permissions, setPermissions] = useState<PermissionMatrix>(
-    () => {
-      // Initialize empty matrix
-      const init = {} as PermissionMatrix;
-      RESOURCES.forEach((r) => (init[r] = []));
-      return init;
-    }
-  );
-
-  const handleToggle = (resource: AdminResource, action: AdminAction) => {
-    setPermissions((prev) => {
-      const currentActions = prev[resource] || [];
-      const hasAction = currentActions.includes(action);
-      return {
-        ...prev,
-        [resource]: hasAction
-          ? currentActions.filter((a) => a !== action)
-          : [...currentActions, action],
-      };
-    });
-  };
+  const [permissions, setPermissions] = useState<PermissionMatrix>(() => {
+    const init = {} as PermissionMatrix;
+    const resources: Array<keyof PermissionMatrix> = [
+      "users", "content", "ai_generation", "feature_flags", "billing", "admin_management"
+    ];
+    resources.forEach((r) => (init[r] = []));
+    return init;
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreate({ slug: slug || label.toLowerCase().replace(/\s+/g, "-"), label, permissions });
+    onCreate({ 
+      slug: slug || label.toLowerCase().replace(/\s+/g, "-"), 
+      label, 
+      permissions 
+    });
   };
 
   if (!isOpen) return null;
@@ -86,12 +61,9 @@ export default function CreateRoleModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Meta Inputs */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink/60">
-                Display Label
-              </label>
+              <label className="mb-1.5 block text-xs font-medium text-ink/60">Display Label</label>
               <input
                 type="text"
                 value={label}
@@ -102,79 +74,26 @@ export default function CreateRoleModal({
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink/60">
-                Slug
-              </label>
+              <label className="mb-1.5 block text-xs font-medium text-ink/60">Slug</label>
               <input
                 type="text"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                placeholder="e.g. content_manager (auto-fills)"
+                placeholder="e.g. content_manager"
                 className="w-full rounded-lg border border-ink/10 bg-sand/60 px-3 py-2 text-sm text-ink placeholder:text-ink/30 focus:border-violet focus:outline-none focus:ring-2 focus:ring-violet/30"
               />
             </div>
           </div>
 
-          {/* Permission Matrix */}
           <div>
             <label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-ink/50">
               Permissions Matrix
             </label>
-            <div className="overflow-x-auto rounded-lg border border-ink/10">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-ink/10 bg-sand/40">
-                    <th className="px-4 py-2.5 text-xs font-medium text-ink/50">
-                      Action
-                    </th>
-                    {RESOURCES.map((r) => (
-                      <th
-                        key={r}
-                        className="px-3 py-2.5 text-center text-xs font-medium text-ink/50"
-                      >
-                        <span className="inline-block max-w-[80px] truncate">
-                          {formatResourceHeader(r)}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ACTIONS.map((action) => (
-                    <tr
-                      key={action}
-                      className="border-b border-ink/5 last:border-0"
-                    >
-                      <td className="px-4 py-2.5 capitalize text-ink/70">
-                        {action}
-                      </td>
-                      {RESOURCES.map((resource) => {
-                        const isChecked = permissions[resource]?.includes(action);
-                        return (
-                          <td key={resource} className="px-3 py-2.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleToggle(resource, action)}
-                              className="h-4 w-4 cursor-pointer rounded border-ink/20 text-violet focus:ring-violet/30"
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PermissionGrid permissions={permissions} onChange={setPermissions} />
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 border-t border-ink/10 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-ink/60 transition hover:bg-sand"
-            >
+            <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-ink/60 transition hover:bg-sand">
               Cancel
             </button>
             <button
