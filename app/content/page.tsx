@@ -1,0 +1,354 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@clerk/nextjs";
+import AdminNav from "@/components/layout/AdminNav";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { useContent } from "@/components/content/useContent";
+import { useAiGeneration } from "@/components/content/useAiGeneration";
+import { ContentFilters } from "@/components/content/ContentFilters";
+import { ContentTable } from "@/components/content/ContentTable";
+import { FormatsSectionsPanel } from "@/components/content/FormatsSectionsPanel";
+import { NewQuestionChooser } from "@/components/content/NewQuestionChooser";
+import { WriteQuestionForm } from "@/components/content/WriteQuestionForm";
+import { GenerateQuestionForm } from "@/components/content/GenerateQuestionForm";
+import type { CreateQuestionInput } from "@/types/content";
+
+type View = "list" | "chooser" | "write" | "generate" | "review";
+
+export default function ContentPage() {
+  const { isLoaded } = useAuth();
+  const { can, isLoading: permsLoading } = useAdminPermissions();
+
+  /*  ALL HOOKS MUST BE DECLARED BEFORE ANY EARLY RETURNS  */
+
+  const content = useContent();
+  const ai = useAiGeneration();
+
+  const [view, setView] = useState<View>("list");
+  const [showManage, setShowManage] = useState(false);
+
+  const [filterFormat, setFilterFormat] = useState("");
+  const [filterSection, setFilterSection] = useState("");
+  const [filterDifficulty, setFilterDifficulty] = useState("");
+
+  const [aiDraftMeta, setAiDraftMeta] = useState<{
+    sectionId: string;
+    difficulty: "easy" | "medium" | "hard";
+    model: string;
+  } | null>(null);
+  const [aiDraftData, setAiDraftData] = useState<{
+    scenarioText: string;
+    guidanceNote: string;
+    modelAnswer: string;
+    rubricDimensions: { label: string; weight: number }[];
+  } | null>(null);
+
+  const formatOptions = useMemo(
+    () => content.formats.filter((f) => !f.killed),
+    [content.formats],
+  );
+
+  const visibleSections = useMemo(() => {
+    const active = content.sections.filter((s) => !s.killed);
+    if (!filterFormat) return active;
+    const fmt = content.formats.find((f) => f.slug === filterFormat);
+    if (!fmt) return active;
+    return active.filter((s) => s.formatId === fmt.id);
+  }, [filterFormat, content.formats, content.sections]);
+
+  useEffect(() => {
+    content.fetchAll();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (content.loading) return;
+    content.fetchQuestions({
+      formatSlug: filterFormat || undefined,
+      sectionSlug: filterSection || undefined,
+      difficulty: filterDifficulty || undefined,
+    });
+  }, [filterFormat, filterSection, filterDifficulty, content.loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (view === "generate" && can("ai_generation", "read")) {
+      ai.fetchModels();
+      ai.fetchCredits();
+    }
+  }, [view, can]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /*  Handlers */
+
+  const handleCancel = () => {
+    setView("list");
+    setAiDraftMeta(null);
+    setAiDraftData(null);
+    ai.clearDraft();
+  };
+
+  const handleChooseWrite = () => {
+    setAiDraftMeta(null);
+    setAiDraftData(null);
+    setView("write");
+  };
+
+  const handleChooseGenerate = () => {
+    ai.clearDraft();
+    setView("generate");
+  };
+
+  const handleGenerate = async (data: {
+    sectionId: string;
+    difficulty: string;
+    model: string;
+    topic: string;
+  }) => {
+    const result = await ai.generate(data);
+    if (result) {
+      setAiDraftMeta({
+        sectionId: result.sectionId,
+        difficulty: result.difficulty as "easy" | "medium" | "hard",
+        model: result.model,
+      });
+      setAiDraftData({
+        scenarioText: result.draft.scenario_text,
+        guidanceNote: result.draft.guidance_note,
+        modelAnswer: result.draft.model_answer,
+        rubricDimensions: result.draft.scoring_rubric.dimensions,
+      });
+      setView("review");
+    }
+  };
+
+  const handleCreateQuestion = async (data: CreateQuestionInput) => {
+    await content.createQuestion(data);
+    await content.fetchQuestions({
+      formatSlug: filterFormat || undefined,
+      sectionSlug: filterSection || undefined,
+      difficulty: filterDifficulty || undefined,
+    });
+    setView("list");
+    setAiDraftMeta(null);
+    setAiDraftData(null);
+  };
+
+  /*  Derived render state  */
+
+  const showList = view === "list" || view === "chooser";
+  const showManagePanel = showManage && showList;
+  const activeError = content.error || ai.error;
+
+  /*  Auth / perms gates (now safely AFTER all hooks) ─ */
+
+  if (!isLoaded || permsLoading) {
+    return (
+      <>
+        <AdminNav />
+        <main className="mx-auto max-w-7xl px-6 py-8">
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-mint-500 border-t-transparent" />
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (!can("content", "read")) {
+    return (
+      <>
+        <AdminNav />
+        <main className="mx-auto max-w-7xl px-6 py-8">
+          <div className="flex h-64 items-center justify-center">
+            <div className="text-center">
+              <p className="font-poppins text-lg font-bold text-coral-500">
+                Access denied
+              </p>
+              <p className="mt-1 text-sm text-ink/50">
+                You don&apos;t have permission to view content management.
+              </p>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  /*  Main render ─ */
+
+  return (
+    <>
+      <AdminNav />
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        {/* Dismissible error banner */}
+        {activeError && (
+          <div className="mb-6 flex items-start justify-between rounded-lg border border-coral-200 bg-coral-50 px-4 py-3">
+            <p className="text-sm text-coral-700">{activeError}</p>
+            <button
+              type="button"
+              onClick={() => {
+                content.dismissError();
+                ai.dismissError();
+              }}
+              className="ml-4 shrink-0 text-coral-400 hover:text-coral-600"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/*  Page header  */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="font-poppins text-2xl font-bold">
+              Content Management
+            </h1>
+            <p className="mt-1 text-sm text-ink/50">
+              Manage questions, formats, sections and dimensions.
+            </p>
+          </div>
+          {showList && (
+            <div className="flex items-center gap-4">
+              {can("content", "write") && (
+                <button
+                  type="button"
+                  onClick={() => setView("chooser")}
+                  className="rounded-md border border-mint-500 px-4 py-2 text-sm font-medium text-mint-600 hover:bg-mint-50"
+                >
+                  + New question
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowManage((p) => !p)}
+                className="text-sm text-mint-600 hover:text-mint-700"
+              >
+                {showManage
+                  ? "Hide formats & sections"
+                  : "Manage formats & sections"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/*  Manage panel (inline, persists under chooser)  */}
+        {showManagePanel && (
+          <div className="mt-8">
+            <FormatsSectionsPanel
+              formats={content.formats}
+              dimensions={content.dimensions}
+              sections={content.sections}
+              canDelete={can("content", "delete")}
+              onUpsertFormat={content.upsertFormat}
+              onKillFormat={content.killFormat}
+              onRestoreFormat={content.restoreFormat}
+              onUpsertDimension={content.upsertDimension}
+              onKillDimension={content.killDimension}
+              onRestoreDimension={content.restoreDimension}
+              onUpsertSection={content.upsertSection}
+              onKillSection={content.killSection}
+              onRestoreSection={content.restoreSection}
+            />
+          </div>
+        )}
+
+        {/*  List view  */}
+        {view === "list" && (
+          <div className="mt-8">
+            {content.loading ? (
+              <div className="flex h-48 items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-mint-500 border-t-transparent" />
+              </div>
+            ) : (
+              <>
+                <ContentFilters
+                  formats={formatOptions}
+                  visibleSections={visibleSections}
+                  selectedFormat={filterFormat}
+                  selectedSection={filterSection}
+                  selectedDifficulty={filterDifficulty}
+                  onFormatChange={(slug) => {
+                    setFilterFormat(slug);
+                    setFilterSection("");
+                  }}
+                  onSectionChange={setFilterSection}
+                  onDifficultyChange={setFilterDifficulty}
+                />
+                <div className="mt-4">
+                  <ContentTable
+                    questions={content.questions}
+                    onToggleActive={(id, isActive) => {
+                      if (can("content", "write")) {
+                        content.toggleQuestionActive(id, isActive);
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/*  Chooser  */}
+        {view === "chooser" && (
+          <div className="mt-8">
+            <NewQuestionChooser
+              canWrite={can("content", "write")}
+              canAiWrite={can("ai_generation", "write")}
+              onChooseWrite={handleChooseWrite}
+              onChooseGenerate={handleChooseGenerate}
+              onCancel={handleCancel}
+            />
+          </div>
+        )}
+
+        {/*  Write-myself form  */}
+        {view === "write" && (
+          <div className="mt-8">
+            <WriteQuestionForm
+              formats={content.formats}
+              sections={content.sections}
+              dimensions={content.dimensions}
+              onSubmit={handleCreateQuestion}
+              onCancel={handleCancel}
+            />
+          </div>
+        )}
+
+        {/*  Generate-with-AI form  */}
+        {view === "generate" && (
+          <div className="mt-8">
+            <GenerateQuestionForm
+              formats={content.formats}
+              sections={content.sections}
+              models={ai.models}
+              credits={ai.credits}
+              generating={ai.generating}
+              onGenerate={handleGenerate}
+              onCancel={handleCancel}
+            />
+          </div>
+        )}
+
+        {/* Review AI draft */}
+        {view === "review" && aiDraftData && aiDraftMeta && (
+          <div className="mt-8">
+            <WriteQuestionForm
+              formats={content.formats}
+              sections={content.sections}
+              dimensions={content.dimensions}
+              initialData={aiDraftData}
+              initialMeta={{
+                sectionId: aiDraftMeta.sectionId,
+                difficulty: aiDraftMeta.difficulty,
+                source: "ai_generated",
+                aiModel: aiDraftMeta.model,
+              }}
+              onSubmit={handleCreateQuestion}
+              onCancel={handleCancel}
+            />
+          </div>
+        )}
+      </main>
+    </>
+  );
+}

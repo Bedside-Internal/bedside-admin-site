@@ -13,7 +13,7 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-async function handleResponse<T>(res: Response): Promise<T> {
+export async function handleResponse<T>(res: Response): Promise<T> {
     if (!res.ok) {
         const errData: ApiErrorResponse = await res.json().catch(() => ({
             error: "Request failed",
