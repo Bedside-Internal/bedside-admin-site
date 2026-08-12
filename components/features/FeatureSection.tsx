@@ -17,7 +17,6 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-// @ts-expect-error - dnd-kit utilities typing workaround
 import { CSS } from "@dnd-kit/utilities";
 import { Plus } from "lucide-react";
 import { FeatureRow } from "./FeatureRow";
