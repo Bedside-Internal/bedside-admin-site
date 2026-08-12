@@ -103,7 +103,7 @@ function FormatsTable({
     title: string;
     subtitle?: string;
     iconKey?: string;
-  }) => Promise<void>;
+  }) => Promise<any>;
   onKill: (id: string, reason: string) => void;
   onRestore: (id: string) => void;
 }) {
@@ -335,7 +335,7 @@ function DimensionsTable({
     subtitle?: string;
     iconKey?: string;
     sortOrder?: number;
-  }) => Promise<void>;
+  }) => Promise<any>;
   onKill: (id: string, reason: string) => void;
   onRestore: (id: string) => void;
 }) {
@@ -603,7 +603,7 @@ function SectionsTable({
     subtitle?: string;
     iconKey?: string;
     sortOrder?: number;
-  }) => Promise<void>;
+  }) => Promise<any>;
   onKill: (id: string, reason: string) => void;
   onRestore: (id: string) => void;
 }) {
@@ -916,7 +916,7 @@ interface FormatsSectionsPanelProps {
     title: string;
     subtitle?: string;
     iconKey?: string;
-  }) => Promise<void>;
+  }) => Promise<any>;
   onKillFormat: (id: string, reason: string) => void;
   onRestoreFormat: (id: string) => void;
   onUpsertDimension: (d: {
@@ -927,7 +927,7 @@ interface FormatsSectionsPanelProps {
     subtitle?: string;
     iconKey?: string;
     sortOrder?: number;
-  }) => Promise<void>;
+  }) => Promise<any>;
   onKillDimension: (id: string, reason: string) => void;
   onRestoreDimension: (id: string) => void;
   onUpsertSection: (d: {
@@ -939,7 +939,7 @@ interface FormatsSectionsPanelProps {
     subtitle?: string;
     iconKey?: string;
     sortOrder?: number;
-  }) => Promise<void>;
+  }) => Promise<any>;
   onKillSection: (id: string, reason: string) => void;
   onRestoreSection: (id: string) => void;
 }
