@@ -20,10 +20,10 @@ export default function ContentPage() {
   const { isLoaded } = useAuth();
   const { can, isLoading: permsLoading } = useAdminPermissions();
 
+  /*  ALL HOOKS MUST BE DECLARED BEFORE ANY EARLY RETURNS  */
+
   const content = useContent();
   const ai = useAiGeneration();
-
-  /* Local view state */
 
   const [view, setView] = useState<View>("list");
   const [showManage, setShowManage] = useState(false);
@@ -32,7 +32,6 @@ export default function ContentPage() {
   const [filterSection, setFilterSection] = useState("");
   const [filterDifficulty, setFilterDifficulty] = useState("");
 
-  // Holds the mapped AI draft so WriteQuestionForm can review it
   const [aiDraftMeta, setAiDraftMeta] = useState<{
     sectionId: string;
     difficulty: "easy" | "medium" | "hard";
@@ -45,7 +44,101 @@ export default function ContentPage() {
     rubricDimensions: { label: string; weight: number }[];
   } | null>(null);
 
-  /* Auth / perms gates */
+  const formatOptions = useMemo(
+    () => content.formats.filter((f) => !f.killed),
+    [content.formats],
+  );
+
+  const visibleSections = useMemo(() => {
+    const active = content.sections.filter((s) => !s.killed);
+    if (!filterFormat) return active;
+    const fmt = content.formats.find((f) => f.slug === filterFormat);
+    if (!fmt) return active;
+    return active.filter((s) => s.formatId === fmt.id);
+  }, [filterFormat, content.formats, content.sections]);
+
+  useEffect(() => {
+    content.fetchAll();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (content.loading) return;
+    content.fetchQuestions({
+      formatSlug: filterFormat || undefined,
+      sectionSlug: filterSection || undefined,
+      difficulty: filterDifficulty || undefined,
+    });
+  }, [filterFormat, filterSection, filterDifficulty, content.loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (view === "generate" && can("ai_generation", "read")) {
+      ai.fetchModels();
+      ai.fetchCredits();
+    }
+  }, [view, can]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /*  Handlers */
+
+  const handleCancel = () => {
+    setView("list");
+    setAiDraftMeta(null);
+    setAiDraftData(null);
+    ai.clearDraft();
+  };
+
+  const handleChooseWrite = () => {
+    setAiDraftMeta(null);
+    setAiDraftData(null);
+    setView("write");
+  };
+
+  const handleChooseGenerate = () => {
+    ai.clearDraft();
+    setView("generate");
+  };
+
+  const handleGenerate = async (data: {
+    sectionId: string;
+    difficulty: string;
+    model: string;
+    topic: string;
+  }) => {
+    const result = await ai.generate(data);
+    if (result) {
+      setAiDraftMeta({
+        sectionId: result.sectionId,
+        difficulty: result.difficulty as "easy" | "medium" | "hard",
+        model: result.model,
+      });
+      setAiDraftData({
+        scenarioText: result.draft.scenario_text,
+        guidanceNote: result.draft.guidance_note,
+        modelAnswer: result.draft.model_answer,
+        rubricDimensions: result.draft.scoring_rubric.dimensions,
+      });
+      setView("review");
+    }
+  };
+
+  const handleCreateQuestion = async (data: CreateQuestionInput) => {
+    await content.createQuestion(data);
+    await content.fetchQuestions({
+      formatSlug: filterFormat || undefined,
+      sectionSlug: filterSection || undefined,
+      difficulty: filterDifficulty || undefined,
+    });
+    setView("list");
+    setAiDraftMeta(null);
+    setAiDraftData(null);
+  };
+
+  /*  Derived render state  */
+
+  const showList = view === "list" || view === "chooser";
+  const showManagePanel = showManage && showList;
+  const activeError = content.error || ai.error;
+
+  /*  Auth / perms gates (now safely AFTER all hooks) ─ */
 
   if (!isLoaded || permsLoading) {
     return (
@@ -80,109 +173,7 @@ export default function ContentPage() {
     );
   }
 
-  /* Data fetching */
-
-  useEffect(() => {
-    content.fetchAll();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Fetch questions once reference data has loaded, and on every filter change
-  useEffect(() => {
-    if (content.loading) return;
-    content.fetchQuestions({
-      formatSlug: filterFormat || undefined,
-      sectionSlug: filterSection || undefined,
-      difficulty: filterDifficulty || undefined,
-    });
-  }, [filterFormat, filterSection, filterDifficulty, content.loading]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Pre-fetch AI models & credits when entering generate view
-  useEffect(() => {
-    if (view === "generate" && can("ai_generation", "read")) {
-      ai.fetchModels();
-      ai.fetchCredits();
-    }
-  }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* Derived data for filters */
-
-  const formatOptions = useMemo(
-    () => content.formats.filter((f) => !f.killed),
-    [content.formats],
-  );
-
-  const visibleSections = useMemo(() => {
-    const active = content.sections.filter((s) => !s.killed);
-    if (!filterFormat) return active;
-    const fmt = content.formats.find((f) => f.slug === filterFormat);
-    if (!fmt) return active;
-    return active.filter((s) => s.formatId === fmt.id);
-  }, [filterFormat, content.formats, content.sections]);
-
-  /* Handlers */
-
-  const handleCancel = () => {
-    setView("list");
-    setAiDraftMeta(null);
-    setAiDraftData(null);
-    ai.clearDraft();
-  };
-
-  const handleChooseWrite = () => {
-    setAiDraftMeta(null);
-    setAiDraftData(null);
-    setView("write");
-  };
-
-  const handleChooseGenerate = () => {
-    ai.clearDraft();
-    setView("generate");
-  };
-
-  const handleGenerate = async (data: {
-    sectionId: string;
-    difficulty: string;
-    model: string;
-    topic: string;
-  }) => {
-    const result = await ai.generate(data);
-    if (result) {
-      // Map snake_case draft → camelCase for WriteQuestionForm
-      setAiDraftMeta({
-        sectionId: result.sectionId,
-        difficulty: result.difficulty as "easy" | "medium" | "hard",
-        model: result.model,
-      });
-      setAiDraftData({
-        scenarioText: result.draft.scenario_text,
-        guidanceNote: result.draft.guidance_note,
-        modelAnswer: result.draft.model_answer,
-        rubricDimensions: result.draft.scoring_rubric.dimensions,
-      });
-      setView("review");
-    }
-  };
-
-  const handleCreateQuestion = async (data: CreateQuestionInput) => {
-    await content.createQuestion(data);
-    // Refresh list and return to list view
-    await content.fetchQuestions({
-      formatSlug: filterFormat || undefined,
-      sectionSlug: filterSection || undefined,
-      difficulty: filterDifficulty || undefined,
-    });
-    setView("list");
-    setAiDraftMeta(null);
-    setAiDraftData(null);
-  };
-
-  /* Render helpers */
-
-  const showList = view === "list" || view === "chooser";
-  const showManagePanel =
-    showManage && (view === "list" || view === "chooser");
-
-  const activeError = content.error || ai.error;
+  /*  Main render ─ */
 
   return (
     <>
@@ -205,7 +196,7 @@ export default function ContentPage() {
           </div>
         )}
 
-        {/* Page header */}
+        {/*  Page header  */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="font-poppins text-2xl font-bold">
@@ -239,7 +230,7 @@ export default function ContentPage() {
           )}
         </div>
 
-        {/* Manage panel (inline, persists under chooser) */}
+        {/*  Manage panel (inline, persists under chooser)  */}
         {showManagePanel && (
           <div className="mt-8">
             <FormatsSectionsPanel
@@ -260,7 +251,7 @@ export default function ContentPage() {
           </div>
         )}
 
-        {/* List view */}
+        {/*  List view  */}
         {view === "list" && (
           <div className="mt-8">
             {content.loading ? (
@@ -297,7 +288,7 @@ export default function ContentPage() {
           </div>
         )}
 
-        {/* Chooser */}
+        {/*  Chooser  */}
         {view === "chooser" && (
           <div className="mt-8">
             <NewQuestionChooser
@@ -310,7 +301,7 @@ export default function ContentPage() {
           </div>
         )}
 
-        {/* Write-myself form */}
+        {/*  Write-myself form  */}
         {view === "write" && (
           <div className="mt-8">
             <WriteQuestionForm
@@ -323,7 +314,7 @@ export default function ContentPage() {
           </div>
         )}
 
-        {/* Generate-with-AI form */}
+        {/*  Generate-with-AI form  */}
         {view === "generate" && (
           <div className="mt-8">
             <GenerateQuestionForm
@@ -338,7 +329,7 @@ export default function ContentPage() {
           </div>
         )}
 
-        {/* Review AI draft (reuses WriteQuestionForm) */}
+        {/* Review AI draft */}
         {view === "review" && aiDraftData && aiDraftMeta && (
           <div className="mt-8">
             <WriteQuestionForm
