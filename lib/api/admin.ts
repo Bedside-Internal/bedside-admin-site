@@ -5,7 +5,7 @@ import {
     UpdateRoleInput,
     GrantAdminAccessInput,
     UpdateAdminAccessInput,
-    ApiErrorResponse, // Assuming this was added in the previous task
+    ApiErrorResponse,
     AdminFeature,
     FeatureType,
     UpsertFeatureInput
@@ -161,4 +161,42 @@ export async function deleteFeature(token: string | null, key: string): Promise<
         cache: "no-store",
     });
     return handleResponse<void>(res);
+}
+
+export async function killFeature(token: string | null, key: string, reason: string): Promise<AdminFeature> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/feature-flags/${key}/kill`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+        body: JSON.stringify({ reason }),
+    });
+    return handleResponse<AdminFeature>(res);
+}
+
+export async function restoreFeature(token: string | null, key: string): Promise<AdminFeature> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/feature-flags/${key}/restore`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+    });
+    return handleResponse<AdminFeature>(res);
+}
+
+export async function reorderFeatures(token: string | null, items: { key: string; order: number }[]): Promise<AdminFeature[]> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/feature-flags/reorder`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+        body: JSON.stringify({ items }),
+    });
+    return handleResponse<AdminFeature[]>(res);
 }
