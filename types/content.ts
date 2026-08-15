@@ -108,7 +108,10 @@ export interface AiModel {
     id: string;
     name: string;
     contextLength?: number;
-    pricing?: string;
+    pricing?: {
+        prompt: string;
+        completion: string;
+    };
 }
 
 export interface AiCredits {
@@ -132,4 +135,9 @@ export interface AiGenerateQuestionResponse {
     difficulty: string;
     model: string;
     draft: AiGeneratedDraft;
+    actualCost?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalUsd: number;
+    };
 }
