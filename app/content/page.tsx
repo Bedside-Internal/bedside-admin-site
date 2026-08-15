@@ -36,6 +36,7 @@ export default function ContentPage() {
     sectionId: string;
     difficulty: "easy" | "medium" | "hard";
     model: string;
+    actualCost?: { promptTokens: number; completionTokens: number; totalUsd: number };
   } | null>(null);
   const [aiDraftData, setAiDraftData] = useState<{
     scenarioText: string;
@@ -109,6 +110,7 @@ export default function ContentPage() {
         sectionId: result.sectionId,
         difficulty: result.difficulty as "easy" | "medium" | "hard",
         model: result.model,
+        actualCost: result.actualCost,
       });
       setAiDraftData({
         scenarioText: result.draft.scenario_text,
@@ -332,6 +334,15 @@ export default function ContentPage() {
         {/* Review AI draft */}
         {view === "review" && aiDraftData && aiDraftMeta && (
           <div className="mt-8">
+            {aiDraftMeta.actualCost && (
+              <div className="mb-4 rounded-md border border-mint-200 bg-mint-50 px-4 py-2.5 text-xs text-mint-700">
+                <span className="font-medium">Actual cost: </span>
+                {aiDraftMeta.actualCost.totalUsd < 0.0005 ? "< $0.001" : `$${aiDraftMeta.actualCost.totalUsd.toFixed(3)}`}
+                <span className="text-mint-600">
+                  {" "}({aiDraftMeta.actualCost.promptTokens.toLocaleString()} in / {aiDraftMeta.actualCost.completionTokens.toLocaleString()} out tokens)
+                </span>
+              </div>
+            )}
             <WriteQuestionForm
               formats={content.formats}
               sections={content.sections}

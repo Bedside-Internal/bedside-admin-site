@@ -135,4 +135,9 @@ export interface AiGenerateQuestionResponse {
     difficulty: string;
     model: string;
     draft: AiGeneratedDraft;
+    actualCost?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalUsd: number;
+    };
 }
