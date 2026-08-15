@@ -15,7 +15,6 @@ interface FeatureRowProps {
   dragHandleProps?: Record<string, unknown>;
   onToggleEnabled: (feature: AdminFeature) => Promise<void>;
   onSave: (key: string, data: UpsertFeatureInput) => Promise<AdminFeature>;
-  onDelete: (key: string) => Promise<void>;
   onKill: (key: string, reason: string) => Promise<AdminFeature>;
   onRestore: (key: string) => Promise<AdminFeature>;
 }
@@ -29,7 +28,6 @@ export function FeatureRow({
   dragHandleProps,
   onToggleEnabled,
   onSave,
-  onDelete,
   onKill,
   onRestore,
 }: FeatureRowProps) {
@@ -84,16 +82,6 @@ export function FeatureRow({
       // Error handled by parent
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm(`Delete "${feature.title}"? This cannot be undone.`))
-      return;
-    try {
-      await onDelete(feature._id);
-    } catch {
-      // Error handled by parent
     }
   };
 
@@ -282,20 +270,10 @@ export function FeatureRow({
                 {saving ? "Saving…" : "Save"}
               </ActionLink>
               <ActionLink onClick={handleCancelEdit}>Cancel</ActionLink>
-              {canDelete && (
-                <ActionLink onClick={handleDelete} variant="coral">
-                  Delete
-                </ActionLink>
-              )}
             </>
           ) : (
             <>
               {canWrite && <ActionLink onClick={handleStartEdit}>Edit</ActionLink>}
-              {canDelete && (
-                <ActionLink onClick={handleDelete} variant="coral">
-                  Delete
-                </ActionLink>
-              )}
               {canWrite &&
                 (feature.killed ? (
                   <button
