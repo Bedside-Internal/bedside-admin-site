@@ -11,7 +11,6 @@ interface FeaturesContentProps {
 
 export default function FeaturesContent({
   canWrite,
-  canDelete,
 }: FeaturesContentProps) {
   const {
     tracks,
@@ -20,7 +19,6 @@ export default function FeaturesContent({
     error,
     clearError,
     upsert,
-    remove,
     kill,
     restore,
     reorder,
@@ -70,10 +68,8 @@ export default function FeaturesContent({
         tracks={tracks}
         loading={loading}
         canWrite={canWrite}
-        canDelete={canDelete}
         onToggleEnabled={toggleEnabled}
         onSave={upsert}
-        onDelete={remove}
         onKill={kill}
         onRestore={restore}
         onReorder={reorder}
@@ -87,10 +83,8 @@ export default function FeaturesContent({
         tracks={tracks}
         loading={loading}
         canWrite={canWrite}
-        canDelete={canDelete}
         onToggleEnabled={toggleEnabled}
         onSave={upsert}
-        onDelete={remove}
         onKill={kill}
         onRestore={restore}
         onReorder={reorder}

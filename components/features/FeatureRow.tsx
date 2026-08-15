@@ -11,7 +11,6 @@ interface FeatureRowProps {
   type: FeatureType;
   tracks: AdminFeature[];
   canWrite: boolean;
-  canDelete: boolean;
   dragHandleProps?: Record<string, unknown>;
   onToggleEnabled: (feature: AdminFeature) => Promise<void>;
   onSave: (key: string, data: UpsertFeatureInput) => Promise<AdminFeature>;
@@ -24,7 +23,6 @@ export function FeatureRow({
   type,
   tracks,
   canWrite,
-  canDelete,
   dragHandleProps,
   onToggleEnabled,
   onSave,

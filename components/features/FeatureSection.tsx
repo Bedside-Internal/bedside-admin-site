@@ -34,13 +34,11 @@ interface FeatureSectionProps {
   tracks: AdminFeature[];
   loading: boolean;
   canWrite: boolean;
-  canDelete: boolean;
   onToggleEnabled: (feature: AdminFeature) => Promise<void>;
   onSave: (
     key: string,
     data: UpsertFeatureInput,
   ) => Promise<AdminFeature>;
-  onDelete: (key: string) => Promise<void>;
   onKill: (key: string, reason: string) => Promise<AdminFeature>;
   onRestore: (key: string) => Promise<AdminFeature>;
   onReorder: (
@@ -64,13 +62,11 @@ function SortableFeatureRow(props: {
   type: FeatureType;
   tracks: AdminFeature[];
   canWrite: boolean;
-  canDelete: boolean;
   onToggleEnabled: (feature: AdminFeature) => Promise<void>;
   onSave: (
     key: string,
     data: UpsertFeatureInput,
   ) => Promise<AdminFeature>;
-  onDelete: (key: string) => Promise<void>;
   onKill: (key: string, reason: string) => Promise<AdminFeature>;
   onRestore: (key: string) => Promise<AdminFeature>;
 }) {
@@ -106,10 +102,8 @@ export function FeatureSection({
   tracks,
   loading,
   canWrite,
-  canDelete,
   onToggleEnabled,
   onSave,
-  onDelete,
   onKill,
   onRestore,
   onReorder,
@@ -211,10 +205,8 @@ export function FeatureSection({
                 type={type}
                 tracks={tracks}
                 canWrite={canWrite}
-                canDelete={canDelete}
                 onToggleEnabled={onToggleEnabled}
                 onSave={onSave}
-                onDelete={onDelete}
                 onKill={onKill}
                 onRestore={onRestore}
               />

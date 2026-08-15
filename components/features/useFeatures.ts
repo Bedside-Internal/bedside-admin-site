@@ -186,7 +186,6 @@ export function useFeatures() {
     error,
     clearError: () => setError(null),
     upsert,
-    remove,
     kill,
     restore,
     reorder,
