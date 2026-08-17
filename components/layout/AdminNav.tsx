@@ -6,6 +6,7 @@ const tabs = [
     { label: "Privileges", href: "/admin-management" },
     { label: "Content", href: "/content" },
     { label: "Features", href: "/features" },
+    { label: "Marketing", href: "/marketing" },
 ];
 
 export default function AdminNav() {
