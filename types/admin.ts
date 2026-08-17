@@ -4,7 +4,8 @@ export type AdminResource =
     | "ai_generation"
     | "feature_flags"
     | "billing"
-    | "admin_management";
+    | "admin_management"
+    | "marketing";
 
 export type AdminAction = "read" | "write" | "delete";
 
