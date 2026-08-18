@@ -101,3 +101,5 @@ export interface CreateBillingCycleInput {
     savingsPct?: number | null;
     badge?: string | null;
 }
+
+export type UpdatePricingTierInput = Partial<CreatePricingTierInput>;
