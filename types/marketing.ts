@@ -27,3 +27,21 @@ export interface CreateTestimonialInput {
     accent: TestimonialAccent;
     enabled: boolean;
 }
+
+export type FormatCardAccent = "mint" | "coral" | "amber" | "violet";
+
+export interface AdminFormatCard {
+    id: string;
+    title: string;
+    description: string;
+    accent: FormatCardAccent;
+    enabled: boolean;
+    sortOrder: number;
+}
+
+export interface CreateFormatCardInput {
+    title: string;
+    description: string;
+    accent: FormatCardAccent;
+    enabled: boolean;
+}
