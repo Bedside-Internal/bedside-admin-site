@@ -100,8 +100,12 @@ export function usePricingTiers() {
 
     const updateFeature = useCallback(
         async (id: string, featureId: string, input: Partial<CreateFeatureInput>) => {
-            const token = await getToken();
-            replaceTier(await api.updateFeature(token, id, featureId, input));
+            try {
+                const token = await getToken();
+                replaceTier(await api.updateFeature(token, id, featureId, input));
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to update feature");
+            }
         },
         [getToken]
     );
