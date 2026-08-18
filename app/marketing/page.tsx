@@ -6,7 +6,7 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import AdminNav from "@/components/layout/AdminNav";
 import TestimonialsContent from "@/components/marketing/TestimonialsContent";
 import FormatsContent from "@/components/marketing/FormatsContent";
-// import PricingContent from "@/components/marketing/PricingContent";
+import PricingContent from "@/components/marketing/PricingContent";
 // import FaqContent from "@/components/marketing/FaqContent";
 
 type Tab = "testimonials" | "formats" | "pricing" | "faq";
@@ -41,7 +41,7 @@ export default function MarketingPage() {
     const tabs: { key: Tab; label: string }[] = [
         { key: "testimonials", label: "Testimonials" },
         { key: "formats", label: "Formats" },
-        // { key: "pricing", label: "Pricing" },
+        { key: "pricing", label: "Pricing" },
         // { key: "faq", label: "FAQ" },
     ];
 
@@ -70,7 +70,7 @@ export default function MarketingPage() {
 
                     {tab === "testimonials" && <TestimonialsContent />}
                     {tab === "formats" && <FormatsContent />}
-                    {/* {tab === "pricing" && <PricingContent />} */}
+                    /* {tab === "pricing" && <PricingContent />} */
                     {/* {tab === "faq" && <FaqContent />} */}
                 </div>
             </main>
