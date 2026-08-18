@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { useFaqEntries } from "@/hooks/useFaqEntries";
@@ -100,6 +100,8 @@ function FaqRow({
     const [question, setQuestion] = useState(entry.question);
     const [answer, setAnswer] = useState(entry.answer);
 
+    useEffect(() => setQuestion(entry.question), [entry.question])
+    
     return (
         <div className="rounded-lg border border-ink/10 bg-white p-6">
             <div className="flex gap-4">
