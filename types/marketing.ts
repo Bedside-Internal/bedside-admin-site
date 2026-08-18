@@ -45,3 +45,54 @@ export interface CreateFormatCardInput {
     accent: FormatCardAccent;
     enabled: boolean;
 }
+
+export type PricingPlanType = "free" | "pro";
+
+export interface PricingFeature {
+    id: string;
+    label: string;
+    included: boolean;
+}
+
+export interface PricingBillingCycle {
+    id: string;
+    months: number;
+    price: number;
+    perMonth: number;
+    savingsPct: number | null;
+    badge: string | null;
+}
+
+export interface PricingPlan {
+    planType: PricingPlanType;
+    price: number;
+    periodLabel: string;
+    priceNote: string;
+    badge: string | null;
+    buttonLabel: string;
+    defaultCycleMonths: number | null;
+    features: PricingFeature[];
+    billingCycles: PricingBillingCycle[];
+}
+
+export interface UpdatePricingPlanInput {
+    price?: number;
+    periodLabel?: string;
+    priceNote?: string;
+    badge?: string | null;
+    buttonLabel?: string;
+    defaultCycleMonths?: number | null;
+}
+
+export interface CreateFeatureInput {
+    label: string;
+    included: boolean;
+}
+
+export interface CreateBillingCycleInput {
+    months: number;
+    price: number;
+    perMonth: number;
+    savingsPct?: number | null;
+    badge?: string | null;
+}
