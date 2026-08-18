@@ -195,7 +195,10 @@ export default function PricingTierColumn({
                 </div>
                 <div className="space-y-2">
                     {tier.billingCycles.map((c) => (
-                        <div key={c.id} className="flex items-center gap-2">
+                        <div
+                            key={c.id}
+                            className="grid grid-cols-[56px_76px_1fr_auto] items-center gap-2"
+                        >
                             <input
                                 type="text"
                                 defaultValue={`${c.months} mo`}
@@ -206,7 +209,7 @@ export default function PricingTierColumn({
                                         updateBillingCycle(tier.id, c.id, { months });
                                     }
                                 }}
-                                className="w-20 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                                className="min-w-0 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
                             />
                             <input
                                 type="text"
@@ -218,7 +221,7 @@ export default function PricingTierColumn({
                                         updateBillingCycle(tier.id, c.id, { perMonth });
                                     }
                                 }}
-                                className="w-28 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                                className="min-w-0 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
                             />
                             <input
                                 type="text"
@@ -229,7 +232,7 @@ export default function PricingTierColumn({
                                     e.target.value !== (c.badge ?? "") &&
                                     updateBillingCycle(tier.id, c.id, { badge: e.target.value || null })
                                 }
-                                className="flex-1 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                                className="min-w-0 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
                             />
                             {canDelete && (
                                 <button
@@ -244,9 +247,7 @@ export default function PricingTierColumn({
                 </div>
                 {canWrite && (
                     <button
-                        onClick={() =>
-                            addBillingCycle(tier.id, { months: 1, price: 0, perMonth: 0 })
-                        }
+                        onClick={() => addBillingCycle(tier.id, { months: 1, price: 0, perMonth: 0 })}
                         className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-mint hover:text-mint-hover"
                     >
                         <Plus size={14} /> Add billing cycle
