@@ -103,3 +103,17 @@ export interface CreateBillingCycleInput {
 }
 
 export type UpdatePricingTierInput = Partial<CreatePricingTierInput>;
+
+export interface AdminFaqEntry {
+    id: string;
+    question: string;
+    answer: string;
+    enabled: boolean;
+    sortOrder: number;
+}
+
+export interface CreateFaqEntryInput {
+    question: string;
+    answer: string;
+    enabled: boolean;
+}
