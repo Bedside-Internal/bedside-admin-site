@@ -34,6 +34,7 @@ export interface TestimonialSubmissionAdmin {
     id: string;
     rating: number;
     quote: string;
+    subtitle: string | null;
     audience: TestimonialAudience;
     nameDisplay: TestimonialNameDisplay;
     consentToPublish: boolean;
