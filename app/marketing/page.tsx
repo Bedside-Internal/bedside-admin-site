@@ -70,7 +70,7 @@ export default function MarketingPage() {
 
                     {tab === "testimonials" && <TestimonialsContent />}
                     {tab === "formats" && <FormatsContent />}
-                    /* {tab === "pricing" && <PricingContent />} */
+                    {tab === "pricing" && <PricingContent />}
                     {/* {tab === "faq" && <FaqContent />} */}
                 </div>
             </main>
