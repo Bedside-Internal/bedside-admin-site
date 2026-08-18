@@ -11,6 +11,7 @@ import type {
 
 interface PricingTierColumnProps {
     tier: AdminPricingTier;
+    reorder?: React.ReactNode;
     canWrite: boolean;
     canDelete: boolean;
     onUpdate: (input: Partial<UpdatePricingTierInput>) => Promise<void>;
@@ -60,6 +61,7 @@ function FieldInput({
 
 export default function PricingTierColumn({
     tier,
+    reorder,
     canWrite,
     canDelete,
     onUpdate,
@@ -73,8 +75,11 @@ export default function PricingTierColumn({
 }: PricingTierColumnProps) {
     return (
         <div className="rounded-lg border border-ink/10 bg-white p-6">
-            <div className="mb-5 text-[11px] font-semibold uppercase tracking-wide text-mint">
-                {tier.title || "New tier"}
+            <div className="mb-5 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-mint">
+                    {tier.title || "New tier"}
+                </span>
+                {reorder}
             </div>
 
             <div className="space-y-4">

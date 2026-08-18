@@ -64,30 +64,33 @@ export default function PricingContent() {
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {sorted.map((tier, idx) => (
                         <div key={tier.id} className="relative">
-                            {canWrite && (
-                                <div className="absolute -left-1 top-6 z-10 flex flex-col gap-0.5">
-                                    <button
-                                        onClick={() => move(tier.id, "up")}
-                                        disabled={idx === 0}
-                                        className="text-mint transition-colors hover:text-mint-hover disabled:cursor-not-allowed disabled:text-ink/15"
-                                    >
-                                        <ChevronUp size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => move(tier.id, "down")}
-                                        disabled={idx === sorted.length - 1}
-                                        className="text-mint transition-colors hover:text-mint-hover disabled:cursor-not-allowed disabled:text-ink/15"
-                                    >
-                                        <ChevronDown size={14} />
-                                    </button>
-                                </div>
-                            )}
                             <PricingTierColumn
+                                key={tier.id}
                                 tier={tier}
                                 canWrite={canWrite}
                                 canDelete={canDelete}
                                 onDelete={() => setDeleteTarget(tier)}
                                 onUpdate={(input) => update(tier.id, input)}
+                                reorder={
+                                    canWrite ? (
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => move(tier.id, "up")}
+                                                disabled={idx === 0}
+                                                className="text-mint transition-colors hover:text-mint-hover disabled:cursor-not-allowed disabled:text-ink/15"
+                                            >
+                                                <ChevronUp size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => move(tier.id, "down")}
+                                                disabled={idx === sorted.length - 1}
+                                                className="text-mint transition-colors hover:text-mint-hover disabled:cursor-not-allowed disabled:text-ink/15"
+                                            >
+                                                <ChevronDown size={14} />
+                                            </button>
+                                        </div>
+                                    ) : null
+                                }
                                 {...nested}
                             />
                         </div>
