@@ -28,6 +28,29 @@ export interface CreateTestimonialInput {
     enabled: boolean;
 }
 
+export type TestimonialNameDisplay = "full_name" | "first_name_only" | "anonymous";
+ 
+export interface TestimonialSubmissionAdmin {
+    id: string;
+    rating: number;
+    quote: string;
+    audience: TestimonialAudience;
+    nameDisplay: TestimonialNameDisplay;
+    consentToPublish: boolean;
+    submittedByName: string;
+    submittedByEmail: string | null;
+    submittedAt: string;
+}
+
+export interface ApproveTestimonialSubmissionInput {
+    quote?: string;
+    subtitle?: string;
+    accent?: TestimonialAccent;
+}
+ 
+export interface RejectTestimonialSubmissionInput {
+    reason?: string;
+}
 export type FormatCardAccent = "mint" | "coral" | "amber" | "violet";
 
 export interface AdminFormatCard {
