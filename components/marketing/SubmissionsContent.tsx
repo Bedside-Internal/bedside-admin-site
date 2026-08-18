@@ -132,6 +132,9 @@ export default function SubmissionsContent({
                                 </div>
                                 <div className="min-w-[220px] flex-1 px-3 text-[14px] leading-relaxed text-ink">
                                     {item.quote}
+                                    {item.subtitle && (
+                                        <div className="mt-1 text-[12px] font-medium text-ink/40">{item.subtitle}</div>
+                                    )}
                                 </div>
                                 <div className="w-[180px] flex-shrink-0 px-3">
                                     <div className="text-[14px] font-semibold text-ink">{item.submittedByName}</div>
