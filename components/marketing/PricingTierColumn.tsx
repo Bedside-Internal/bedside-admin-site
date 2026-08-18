@@ -166,10 +166,16 @@ export default function PricingTierColumn({
                                 type="text"
                                 defaultValue={f.label}
                                 disabled={!canWrite}
-                                onBlur={(e) =>
-                                    e.target.value !== f.label &&
-                                    updateFeature(tier.id, f.id, { label: e.target.value })
-                                }
+                                onBlur={(e) => {
+                                    const trimmed = e.target.value.trim();
+                                    if (!trimmed) {
+                                        e.target.value = f.label;
+                                        return;
+                                    }
+                                    if (trimmed !== f.label) {
+                                        updateFeature(tier.id, f.id, { label: trimmed });
+                                    }
+                                }}
                                 className="flex-1 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
                             />
                             {canDelete && (
