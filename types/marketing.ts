@@ -46,8 +46,6 @@ export interface CreateFormatCardInput {
     enabled: boolean;
 }
 
-export type PricingPlanType = "free" | "pro";
-
 export interface PricingFeature {
     id: string;
     label: string;
@@ -63,8 +61,12 @@ export interface PricingBillingCycle {
     badge: string | null;
 }
 
-export interface PricingPlan {
-    planType: PricingPlanType;
+export interface AdminPricingTier {
+    id: string;
+    title: string;
+    featured: boolean;
+    enabled: boolean;
+    sortOrder: number;
     price: number;
     periodLabel: string;
     priceNote: string;
@@ -75,13 +77,16 @@ export interface PricingPlan {
     billingCycles: PricingBillingCycle[];
 }
 
-export interface UpdatePricingPlanInput {
-    price?: number;
-    periodLabel?: string;
-    priceNote?: string;
-    badge?: string | null;
-    buttonLabel?: string;
-    defaultCycleMonths?: number | null;
+export interface CreatePricingTierInput {
+    title: string;
+    featured: boolean;
+    price: number;
+    periodLabel: string;
+    priceNote: string;
+    badge: string | null;
+    buttonLabel: string;
+    defaultCycleMonths: number | null;
+    enabled: boolean;
 }
 
 export interface CreateFeatureInput {
