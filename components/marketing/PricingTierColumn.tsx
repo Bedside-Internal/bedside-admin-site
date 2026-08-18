@@ -202,7 +202,7 @@ export default function PricingTierColumn({
                     {tier.billingCycles.map((c) => (
                         <div
                             key={c.id}
-                            className="grid grid-cols-[56px_76px_1fr_auto] items-center gap-2"
+                            className="grid grid-cols-[52px_72px_76px_1fr_auto] items-center gap-2"
                         >
                             <input
                                 type="text"
@@ -218,11 +218,24 @@ export default function PricingTierColumn({
                             />
                             <input
                                 type="text"
+                                defaultValue={`$${c.price.toFixed(2)}`}
+                                placeholder="Total"
+                                disabled={!canWrite}
+                                onBlur={(e) => {
+                                    const price = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
+                                    if (!Number.isNaN(price) && price !== c.price) {
+                                        updateBillingCycle(tier.id, c.id, { price });
+                                    }
+                                }}
+                                className="min-w-0 rounded-md border border-ink/15 bg-white px-2 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                            />
+                            <input
+                                type="text"
                                 defaultValue={`$${c.perMonth.toFixed(2)}/mo`}
                                 disabled={!canWrite}
                                 onBlur={(e) => {
                                     const perMonth = parseFloat(e.target.value.replace(/[^0-9.]/g, ""));
-                                    if (!Number.isNaN(perMonth)) {
+                                    if (!Number.isNaN(perMonth) && perMonth !== c.perMonth) {
                                         updateBillingCycle(tier.id, c.id, { perMonth });
                                     }
                                 }}
