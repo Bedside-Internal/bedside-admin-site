@@ -41,9 +41,9 @@ export interface AdminUserRow {
     roleSlug: string;
     roleLabel: string;
     permissionOverrides: Partial<PermissionMatrix> | null;
+    isOwner: boolean;
     createdAt: string;
 }
-
 export interface GrantAdminAccessInput {
     userId: string;
     roleId: string;

@@ -200,3 +200,21 @@ export async function reorderFeatures(token: string | null, items: { key: string
     });
     return handleResponse<AdminFeature[]>(res);
 }
+
+export async function grantOwnerStatus(token: string | null, id: string): Promise<AdminUserRow> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/admins/${id}/owner`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        cache: "no-store",
+    });
+    return handleResponse<AdminUserRow>(res);
+}
+
+export async function revokeOwnerStatus(token: string | null, id: string): Promise<AdminUserRow> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/admins/${id}/owner`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        cache: "no-store",
+    });
+    return handleResponse<AdminUserRow>(res);
+}

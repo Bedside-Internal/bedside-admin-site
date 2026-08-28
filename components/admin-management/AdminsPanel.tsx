@@ -3,25 +3,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { AdminUserRow, AdminRole, GrantAdminAccessInput } from "@/types/admin";
-import { listAdmins, listRoles, grantAdminAccess, updateAdminAccess, revokeAdminAccess } from "@/lib/api/admin";
+import { listAdmins, listRoles, grantAdminAccess, updateAdminAccess, revokeAdminAccess, grantOwnerStatus, revokeOwnerStatus } from "@/lib/api/admin";
 import GrantAccessModal from "./GrantAccessModal";
 
 interface AdminsPanelProps {
   canWrite: boolean;
   canDelete: boolean;
+  isOwner: boolean;
+  selfAdminId: string | null;
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function AdminsPanel({ canWrite, canDelete }: AdminsPanelProps) {
+export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId }: AdminsPanelProps) {
   const { getToken } = useAuth();
-  
+
   const [admins, setAdmins] = useState<AdminUserRow[]>([]);
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGranting, setIsGranting] = useState(false);
 
@@ -75,6 +77,44 @@ export default function AdminsPanel({ canWrite, canDelete }: AdminsPanelProps) {
     }
   };
 
+  const ownerCount = admins.filter((a) => a.isOwner).length;
+  const handleMakeOwner = async (id: string) => {
+    try {
+      const token = await getToken();
+      await grantOwnerStatus(token, id);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || "Failed to grant owner status");
+    }
+  };
+
+  const handleRemoveOwner = async (id: string, isLast: boolean) => {
+    if (isLast) {
+      alert("Can't remove the last owner — make someone else an owner first.");
+      return;
+    }
+    if (!confirm("Remove owner status from this admin?")) return;
+    try {
+      const token = await getToken();
+      await revokeOwnerStatus(token, id);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || "Failed to revoke owner status");
+    }
+  };
+
+  const handleTransferOwnership = async (id: string, email: string) => {
+    if (!confirm(`Transfer ownership to ${email}? You'll be removed as an owner (your admin access stays).`)) return;
+    try {
+      const token = await getToken();
+      await grantOwnerStatus(token, id);
+      if (selfAdminId) await revokeOwnerStatus(token, selfAdminId);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || "Failed to transfer ownership");
+    }
+  };
+
   const handleExpand = (admin: AdminUserRow) => {
     if (expandedId === admin.id) {
       setExpandedId(null);
@@ -119,7 +159,7 @@ export default function AdminsPanel({ canWrite, canDelete }: AdminsPanelProps) {
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-sm text-ink/40">Loading...</div>
           ) : admins.length === 0 ? (
-             <div className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="flex flex-col items-center justify-center p-8 text-center">
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-violet/10">
                 <svg className="h-5 w-5 text-violet" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
               </div>
@@ -137,6 +177,10 @@ export default function AdminsPanel({ canWrite, canDelete }: AdminsPanelProps) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="truncate text-sm font-semibold text-ink">{admin.email}</p>
+                        {admin.isOwner && (
+                          <span className="shrink-0 rounded bg-amber/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber">Owner</span>
+                        )}
+
                         {admin.permissionOverrides && (
                           <span className="shrink-0 rounded bg-amber/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber">Custom</span>
                         )}
@@ -203,6 +247,34 @@ export default function AdminsPanel({ canWrite, canDelete }: AdminsPanelProps) {
                           </div>
                         )}
                       </div>
+                      {isOwner && (
+                        <div className="flex gap-2 border-t border-ink/10 pt-3 mt-3">
+                          {admin.isOwner ? (
+                            <button
+                              onClick={() => handleRemoveOwner(admin.id, ownerCount <= 1)}
+                              disabled={ownerCount <= 1}
+                              className="rounded-lg px-3 py-1.5 text-xs font-medium text-coral hover:bg-coral/10 disabled:opacity-40"
+                            >
+                              Remove owner status
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleMakeOwner(admin.id)}
+                                className="rounded-lg px-3 py-1.5 text-xs font-medium text-violet hover:bg-violet/10"
+                              >
+                                Add as co-owner
+                              </button>
+                              <button
+                                onClick={() => handleTransferOwnership(admin.id, admin.email)}
+                                className="rounded-lg px-3 py-1.5 text-xs font-medium text-amber hover:bg-amber/10"
+                              >
+                                Transfer ownership to them
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </li>

@@ -8,7 +8,7 @@ import AdminsPanel from "@/components/admin-management/AdminsPanel";
 
 export default function AdminManagementPage() {
   const { isLoaded } = useAuth();
-  const { can, isLoading: permsLoading } = useAdminPermissions();
+  const { can, isLoading: permsLoading, isOwner, adminId } = useAdminPermissions();
 
   if (!isLoaded || permsLoading) {
     return (
@@ -66,6 +66,8 @@ export default function AdminManagementPage() {
             <AdminsPanel 
               canWrite={can("admin_management", "write")} 
               canDelete={can("admin_management", "delete")} 
+              isOwner={isOwner}
+              selfAdminId={adminId}
             />
           </div>
         </div>
