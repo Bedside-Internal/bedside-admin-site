@@ -8,6 +8,7 @@ import AdminNav from "@/components/layout/AdminNav";
 import UserSearch from "@/components/users/UserSearch";
 import UserTable from "@/components/users/UserTable";
 import UserDetailPanel from "@/components/users/UserDetailPanel";
+import AccountDeletionsModal from "@/components/users/AccountDeletionsModal";
 
 export default function UsersPage() {
     const { getToken, isLoaded } = useAuth();
@@ -20,6 +21,8 @@ export default function UsersPage() {
 
     const [search, setSearch] = useState("");
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+    const [showDeletionsModal, setShowDeletionsModal] = useState(false);
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
@@ -134,6 +137,12 @@ export default function UsersPage() {
                         <span className="text-sm text-ink/50">
                             {users.length} of {users.length}
                         </span>
+                        <button
+                            onClick={() => setShowDeletionsModal(true)}
+                            className="rounded-md border border-ink/15 px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-sand"
+                        >
+                            Account deletions
+                        </button>
                     </div>
 
                     {/* Search */}
@@ -170,6 +179,7 @@ export default function UsersPage() {
                     onGrant={handleGrant}
                 />
             </main>
+            {showDeletionsModal && <AccountDeletionsModal onClose={() => setShowDeletionsModal(false)} />}
         </div>
     );
 }

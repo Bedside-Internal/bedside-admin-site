@@ -31,3 +31,22 @@ export interface GrantAttemptsPayload {
 export interface ApiErrorResponse {
   error: string;
 }
+
+export type AccountDeletionStatus = "pending" | "completed" | "restored";
+
+export interface AccountDeletion {
+  id: string;
+  userId: string;
+  clerkId: string;
+  email: string | null;
+  firstName: string | null;
+  requestedAt: string;
+  scheduledPurgeAt: string;
+  status: AccountDeletionStatus;
+  restoredAt: string | null;
+  restoredBy: string | null;
+}
+
+export interface RestoreAccountDeletionInput {
+  newClerkId: string;
+}
