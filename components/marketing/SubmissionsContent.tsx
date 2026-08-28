@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import type { TestimonialSubmissionAdmin } from "@/types/marketing";
+import { useTestimonialCollectionConfig } from "@/hooks/useTestimonialCollectionConfig";
 
 const AUDIENCE_STYLES: Record<TestimonialSubmissionAdmin["audience"], string> = {
     applicant: "text-mint",
@@ -23,6 +24,66 @@ function StarsReadOnly({ rating }: { rating: number }) {
                     ★
                 </span>
             ))}
+        </div>
+    );
+}
+
+function CollectionConfigPanel() {
+    const { config, loading, saving, error, clearError, update } = useTestimonialCollectionConfig();
+    const { can } = useAdminPermissions();
+    const canWrite = can("marketing", "write");
+
+    if (loading || !config) {
+        return <div className="mb-6 h-16 animate-pulse rounded-lg border border-ink/10 bg-ink/5" />;
+    }
+
+    return (
+        <div className="mb-6 rounded-lg border border-ink/10 bg-white p-4">
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mint">
+                Collection prompt settings
+            </div>
+            {error && (
+                <div className="mb-3 flex items-center justify-between rounded-md bg-coral/10 px-3 py-2 text-[13px] text-coral">
+                    <span>{error}</span>
+                    <button onClick={clearError} className="text-coral/60 hover:text-coral">×</button>
+                </div>
+            )}
+            <div className="flex flex-wrap items-end gap-4">
+                <div>
+                    <label className="mb-1.5 block text-[13px] text-ink/60">Mode</label>
+                    <select
+                        value={config.mode}
+                        disabled={!canWrite || saving}
+                        onChange={(e) => update({ mode: e.target.value as typeof config.mode })}
+                        className="rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                    >
+                        <option value="all">All users</option>
+                        <option value="ab">A/B rollout</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+                {config.mode === "ab" && (
+                    <div>
+                        <label className="mb-1.5 block text-[13px] text-ink/60">Rollout %</label>
+                        <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            defaultValue={config.rolloutPercent}
+                            disabled={!canWrite || saving}
+                            onBlur={(e) => {
+                                const val = Number(e.target.value);
+                                if (val !== config.rolloutPercent) update({ rolloutPercent: val });
+                            }}
+                            className="w-24 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                        />
+                    </div>
+                )}
+                <div className="text-[12px] text-ink/40">
+                    salt: <span className="font-mono">{config.salt}</span>
+                </div>
+                {saving && <span className="text-[12px] text-ink/40">Saving…</span>}
+            </div>
         </div>
     );
 }
@@ -70,6 +131,8 @@ export default function SubmissionsContent({
                 </div>
             )}
 
+            <CollectionConfigPanel />
+            
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-mint">
                 Pending submissions
             </div>

@@ -2,6 +2,19 @@ export type TestimonialAudience = "applicant" | "partner";
 export type TestimonialAvatarShape = "circle" | "square";
 export type TestimonialAccent = "mint" | "coral" | "amber" | "violet";
 
+export type TestimonialCollectionMode = "all" | "ab" | "off";
+
+export interface TestimonialCollectionConfig {
+    mode: TestimonialCollectionMode;
+    rolloutPercent: number;
+    salt: string;
+}
+
+export interface UpdateTestimonialCollectionConfigInput {
+    mode?: TestimonialCollectionMode;
+    rolloutPercent?: number;
+}
+
 export interface AdminTestimonial {
     id: string;
     name: string;
@@ -29,7 +42,7 @@ export interface CreateTestimonialInput {
 }
 
 export type TestimonialNameDisplay = "full_name" | "first_name_only" | "anonymous";
- 
+
 export interface TestimonialSubmissionAdmin {
     id: string;
     rating: number;
@@ -48,7 +61,7 @@ export interface ApproveTestimonialSubmissionInput {
     subtitle?: string;
     accent?: TestimonialAccent;
 }
- 
+
 export interface RejectTestimonialSubmissionInput {
     reason?: string;
 }
