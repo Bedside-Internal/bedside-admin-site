@@ -290,6 +290,77 @@ export default function PricingTierColumn({
                     </button>
                 </div>
             )}
+
+            {/* Unlock requirements */}
+            <div className="mt-6 border-t border-ink/10 pt-5">
+                <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mint">
+                    Unlock requirements
+                </div>
+                <div className="space-y-3">
+                    <div>
+                        <label className="mb-1.5 block text-[13px] text-ink/60">Referrals required (0-3)</label>
+                        <input
+                            type="number"
+                            min={0}
+                            max={3}
+                            value={tier.requirements.referralsRequired}
+                            disabled={!canWrite}
+                            onChange={(e) => {
+                                const referralsRequired = Math.max(0, Math.min(3, parseInt(e.target.value, 10) || 0));
+                                onUpdate({ requirements: { ...tier.requirements, referralsRequired } });
+                            }}
+                            className="w-full rounded-md border border-ink/15 bg-white px-3 py-2.5 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                        />
+                    </div>
+
+                    <label className="flex items-center gap-2.5 text-[13px] font-medium text-ink">
+                        <input
+                            type="checkbox"
+                            checked={tier.requirements.ownTestimonialRequired}
+                            disabled={!canWrite}
+                            onChange={(e) =>
+                                onUpdate({ requirements: { ...tier.requirements, ownTestimonialRequired: e.target.checked } })
+                            }
+                            className="h-4 w-4 rounded border-ink/15 accent-mint"
+                        />
+                        Requires their own testimonial
+                    </label>
+
+                    <label className="flex items-center gap-2.5 text-[13px] font-medium text-ink">
+                        <input
+                            type="checkbox"
+                            checked={tier.requirements.referredTestimonialRequired}
+                            disabled={!canWrite}
+                            onChange={(e) =>
+                                onUpdate({
+                                    requirements: { ...tier.requirements, referredTestimonialRequired: e.target.checked },
+                                })
+                            }
+                            className="h-4 w-4 rounded border-ink/15 accent-mint"
+                        />
+                        Requires a testimonial from a referred friend
+                    </label>
+
+                    <div>
+                        <label className="mb-1.5 block text-[13px] text-ink/60">Combine conditions with</label>
+                        <select
+                            value={tier.requirements.requireAll ? "all" : "any"}
+                            disabled={!canWrite}
+                            onChange={(e) =>
+                                onUpdate({ requirements: { ...tier.requirements, requireAll: e.target.value === "all" } })
+                            }
+                            className="w-full rounded-md border border-ink/15 bg-white px-3 py-2.5 text-sm font-dm text-ink outline-none focus:border-mint disabled:bg-sand/40"
+                        >
+                            <option value="all">ALL must be met (AND)</option>
+                            <option value="any">ANY one is enough (OR)</option>
+                        </select>
+                        <p className="mt-1.5 text-[11px] text-ink/40">
+                            e.g. the 3-month tier uses OR ("1 referral OR 1 testimonial"); the 6/12-month
+                            tiers use AND.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

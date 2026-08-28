@@ -85,6 +85,13 @@ export interface PricingBillingCycle {
     badge: string | null;
 }
 
+export interface PricingRequirements {
+    referralsRequired: number;
+    ownTestimonialRequired: boolean;
+    referredTestimonialRequired: boolean;
+    requireAll: boolean;
+}
+
 export interface AdminPricingTier {
     id: string;
     title: string;
@@ -99,6 +106,7 @@ export interface AdminPricingTier {
     defaultCycleMonths: number | null;
     features: PricingFeature[];
     billingCycles: PricingBillingCycle[];
+    requirements: PricingRequirements;
 }
 
 export interface CreatePricingTierInput {
@@ -111,6 +119,24 @@ export interface CreatePricingTierInput {
     buttonLabel: string;
     defaultCycleMonths: number | null;
     enabled: boolean;
+    requirements?: PricingRequirements;
+}
+
+export interface AdminReferral {
+    id: string;
+    referrerUserId: string;
+    referrerEmail: string | null;
+    referredUserId: string;
+    referredEmail: string | null;
+    codeUsed: string;
+    createdAt: string;
+    activatedAt: string | null;
+    voidedAt: string | null;
+    voidedReason: string | null;
+}
+
+export interface VoidReferralInput {
+    reason?: string;
 }
 
 export interface CreateFeatureInput {

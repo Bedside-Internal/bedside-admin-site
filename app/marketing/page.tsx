@@ -10,8 +10,9 @@ import SubmissionsContent from "@/components/marketing/SubmissionsContent";
 import FormatsContent from "@/components/marketing/FormatsContent";
 import PricingContent from "@/components/marketing/PricingContent";
 import FaqContent from "@/components/marketing/FaqContent";
+import ReferralsContent from "@/components/marketing/ReferralsContent";
 
-type Tab = "testimonials" | "submissions" | "formats" | "pricing" | "faq";
+type Tab = "testimonials" | "submissions" | "formats" | "pricing" | "faq" | "referrals";
 
 export default function MarketingPage() {
     const { isLoaded } = useAuth();
@@ -51,6 +52,7 @@ export default function MarketingPage() {
         },
         { key: "formats", label: "Formats" },
         { key: "pricing", label: "Pricing" },
+        { key: "referrals", label: "Referrals" },
         { key: "faq", label: "FAQ" },
     ];
 
@@ -67,8 +69,8 @@ export default function MarketingPage() {
                                 key={t.key}
                                 onClick={() => setTab(t.key)}
                                 className={`-mb-px flex items-center gap-2 border-b-2 pb-2.5 text-sm font-medium transition-colors ${tab === t.key
-                                        ? "border-mint text-ink"
-                                        : "border-transparent text-ink/40 hover:text-ink/70"
+                                    ? "border-mint text-ink"
+                                    : "border-transparent text-ink/40 hover:text-ink/70"
                                     }`}
                             >
                                 {t.label}
@@ -95,6 +97,7 @@ export default function MarketingPage() {
                     )}
                     {tab === "formats" && <FormatsContent />}
                     {tab === "pricing" && <PricingContent />}
+                    {tab === "referrals" && <ReferralsContent />}
                     {tab === "faq" && <FaqContent />}
                 </div>
             </main>
