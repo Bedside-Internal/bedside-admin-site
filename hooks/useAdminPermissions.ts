@@ -10,6 +10,8 @@ export function useAdminPermissions() {
   const [permissions, setPermissions] = useState<PermissionMatrix | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
+  const [adminId, setAdminId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -28,9 +30,11 @@ export function useAdminPermissions() {
 
         if (!res.ok) throw new Error("Failed to fetch admin permissions");
         
-        // Assuming GET /api/admin/me returns { ..., permissions: PermissionMatrix }
         const data = await res.json(); 
         setPermissions(data.permissions);
+        setIsOwner(Boolean(data.isOwner));
+        setAdminId(data.adminId ?? null);
+
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -49,5 +53,5 @@ export function useAdminPermissions() {
     [permissions]
   );
 
-  return { can, isLoading, error, permissions };
+  return { can, isLoading, error, permissions, isOwner, adminId };
 }
