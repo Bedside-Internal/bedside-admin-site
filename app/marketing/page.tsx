@@ -11,8 +11,9 @@ import FormatsContent from "@/components/marketing/FormatsContent";
 import PricingContent from "@/components/marketing/PricingContent";
 import FaqContent from "@/components/marketing/FaqContent";
 import ReferralsContent from "@/components/marketing/ReferralsContent";
+import SocialLinksContent from "@/components/marketing/SocialLinksContent";
 
-type Tab = "testimonials" | "submissions" | "formats" | "pricing" | "faq" | "referrals";
+type Tab = "testimonials" | "submissions" | "formats" | "pricing" | "faq" | "social" | "referrals";
 
 export default function MarketingPage() {
     const { isLoaded } = useAuth();
@@ -54,6 +55,7 @@ export default function MarketingPage() {
         { key: "pricing", label: "Pricing" },
         { key: "referrals", label: "Referrals" },
         { key: "faq", label: "FAQ" },
+        { key: "social", label: "Social links" },
     ];
 
     return (
@@ -99,6 +101,7 @@ export default function MarketingPage() {
                     {tab === "pricing" && <PricingContent />}
                     {tab === "referrals" && <ReferralsContent />}
                     {tab === "faq" && <FaqContent />}
+                    {tab === "social" && <SocialLinksContent />}
                 </div>
             </main>
         </div>
