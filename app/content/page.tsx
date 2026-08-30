@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import AdminNav from "@/components/layout/AdminNav";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { useContent } from "@/components/content/useContent";
@@ -15,6 +16,7 @@ import { GenerateQuestionForm } from "@/components/content/GenerateQuestionForm"
 import SubmittedQuestionsContent from "@/components/content/SubmittedQuestionsContent";
 import { useUserSubmittedQuestions } from "@/hooks/useUserSubmittedQuestions";
 import type { CreateQuestionInput } from "@/types/content";
+import type { UserSubmittedQuestionAdmin } from "@/types/marketing";
 
 type Tab = "questions" | "submissions";
 type View = "list" | "chooser" | "write" | "generate" | "review";
@@ -22,6 +24,7 @@ type View = "list" | "chooser" | "write" | "generate" | "review";
 export default function ContentPage() {
   const { isLoaded } = useAuth();
   const { can, isLoading: permsLoading } = useAdminPermissions();
+  const searchParams = useSearchParams();
 
   /*  ALL HOOKS MUST BE DECLARED BEFORE ANY EARLY RETURNS  */
 
@@ -49,6 +52,21 @@ export default function ContentPage() {
     modelAnswer: string;
     rubricDimensions: { label: string; weight: number }[];
   } | null>(null);
+
+  // Deep-link prefill from submission approval
+  const [prefillSubmission, setPrefillSubmission] = useState<UserSubmittedQuestionAdmin | null>(null);
+
+  useEffect(() => {
+    const prefill = searchParams.get("prefill");
+    if (prefill?.startsWith("submission:")) {
+      const submissionId = prefill.slice("submission:".length);
+      const submission = submissions.items.find((s) => s.id === submissionId);
+      if (submission) {
+        setPrefillSubmission(submission);
+        setView("write");
+      }
+    }
+  }, [searchParams, submissions.items]);
 
   const formatOptions = useMemo(
     () => content.formats.filter((f) => !f.killed),
@@ -343,18 +361,33 @@ export default function ContentPage() {
               </div>
             )}
 
-            {/*  Write-myself form  */}
+{/*  Write-myself form  */}
             {view === "write" && (
               <div className="mt-8">
                 <WriteQuestionForm
                   formats={content.formats}
                   sections={content.sections}
                   dimensions={content.dimensions}
-              onSubmit={handleCreateQuestion}
-              onCancel={handleCancel}
-            />
-          </div>
-        )}
+                  initialData={prefillSubmission
+                    ? {
+                        scenarioText: prefillSubmission.questionText,
+                        guidanceNote: `Category: ${prefillSubmission.categoryText}`,
+                        modelAnswer: "",
+                        rubricDimensions: [],
+                      }
+                    : undefined}
+                  initialMeta={prefillSubmission
+                    ? {
+                        sectionId: prefillSubmission.formatId ?? undefined,
+                        difficulty: "easy" as const,
+                        source: "manual" as const,
+                      }
+                    : undefined}
+                  onSubmit={handleCreateQuestion}
+                  onCancel={handleCancel}
+                />
+              </div>
+            )}
 
         {/*  Generate-with-AI form  */}
         {view === "generate" && (
