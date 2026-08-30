@@ -268,7 +268,7 @@ export default function ContentPage() {
                   <button
                     type="button"
                     onClick={() => setView("chooser")}
-                    className="rounded-md border border-mint-500 px-4 py-2 text-sm font-medium text-mint-600 hover:bg-mint-50"
+                    className="mt-1 rounded-md border border-mint-500 px-4 py-2 text-sm font-medium text-mint-600 hover:bg-mint-50"
                   >
                     + New question
                   </button>
