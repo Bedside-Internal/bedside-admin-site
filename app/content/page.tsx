@@ -12,7 +12,7 @@ import { FormatsSectionsPanel } from "@/components/content/FormatsSectionsPanel"
 import { NewQuestionChooser } from "@/components/content/NewQuestionChooser";
 import { WriteQuestionForm } from "@/components/content/WriteQuestionForm";
 import { GenerateQuestionForm } from "@/components/content/GenerateQuestionForm";
-import { SubmittedQuestionsContent } from "@/components/content/SubmittedQuestionsContent";
+import SubmittedQuestionsContent from "@/components/content/SubmittedQuestionsContent";
 import { useUserSubmittedQuestions } from "@/hooks/useUserSubmittedQuestions";
 import type { CreateQuestionInput } from "@/types/content";
 
@@ -398,6 +398,8 @@ export default function ContentPage() {
               onCancel={handleCancel}
             />
           </div>
+        )}
+          </>
         )}
 
         {/*  Submitted Questions tab content  */}
