@@ -211,3 +211,28 @@ export interface CreateSocialLinkInput {
     label?: string | null;
     enabled: boolean;
 }
+
+export type UserQuestionVisibility = "private" | "pending" | "approved" | "rejected";
+
+export interface UserSubmittedQuestionAdmin {
+    id: string;
+    formatId: string | null;
+    formatTitle: string | null;
+    categoryText: string;
+    questionText: string;
+    visibility: UserQuestionVisibility;
+    submittedByName: string;
+    submittedByEmail: string | null;
+    submittedAt: string;
+    reviewedAt: string | null;
+    rejectionReason: string | null;
+}
+
+export interface ApproveUserQuestionInput {
+    // No fields needed for MVP — approve is a status flip only.
+    // Deep-link to Write Question form handles pre-fill.
+}
+
+export interface RejectUserQuestionInput {
+    reason?: string;
+}
