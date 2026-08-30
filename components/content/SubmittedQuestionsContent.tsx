@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import type { UserSubmittedQuestionAdmin } from "@/types/marketing";
 
@@ -47,8 +48,15 @@ export default function SubmittedQuestionsContent({
 }: SubmittedQuestionsContentProps) {
     const { can } = useAdminPermissions();
     const canWrite = can("content", "write");
+    const router = useRouter();
     const [rejectTarget, setRejectTarget] = useState<UserSubmittedQuestionAdmin | null>(null);
     const [rejectReason, setRejectReason] = useState("");
+
+    const handleApprove = async (id: string) => {
+        await approve(id);
+        // Redirect to write question form with prefill
+        router.push(`/admin/content?prefill=submission:${id}`);
+    };
 
     const handleRejectConfirm = async () => {
         if (!rejectTarget) return;
@@ -149,7 +157,7 @@ export default function SubmittedQuestionsContent({
                                     {canWrite && item.visibility === "pending" ? (
                                         <>
                                             <button
-                                                onClick={() => approve(item.id)}
+                                                onClick={() => handleApprove(item.id)}
                                                 disabled={busy}
                                                 className="rounded-md border border-ink/15 bg-white px-3.5 py-1.5 text-[13px] font-bold text-ink transition-colors hover:bg-sand disabled:cursor-not-allowed disabled:opacity-50"
                                             >
