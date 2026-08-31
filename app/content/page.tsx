@@ -248,7 +248,7 @@ export default function ContentPage() {
               className={`-mb-px flex items-center gap-2 border-b-2 pb-2.5 text-sm font-medium transition-colors ${tab === t.key
                 ? "border-mint text-ink"
                 : "border-transparent text-ink/40 hover:text-ink/70"
-              }`}
+                }`}
             >
               {t.label}
               {t.badge !== undefined && (
@@ -263,12 +263,12 @@ export default function ContentPage() {
         {tab === "questions" && (
           <>
             {showList && (
-              <div className="flex items-center gap-4">
+              <div className="mt-2 flex items-center gap-4">
                 {can("content", "write") && (
                   <button
                     type="button"
                     onClick={() => setView("chooser")}
-                    className="mt-1 rounded-md border border-mint-500 px-4 py-2 text-sm font-medium text-mint-600 hover:bg-mint-50"
+                    className="rounded-md border border-mint-500 px-4 py-2 text-sm font-medium text-mint-600 hover:bg-mint-50"
                   >
                     + New question
                   </button>
@@ -278,9 +278,7 @@ export default function ContentPage() {
                   onClick={() => setShowManage((p) => !p)}
                   className="text-sm text-mint-600 hover:text-mint-700"
                 >
-                  {showManage
-                    ? "Hide formats & sections"
-                    : "Manage formats & sections"}
+                  {showManage ? "Hide formats & sections" : "Manage formats & sections"}
                 </button>
               </div>
             )}
@@ -361,7 +359,7 @@ export default function ContentPage() {
               </div>
             )}
 
-{/*  Write-myself form  */}
+            {/*  Write-myself form  */}
             {view === "write" && (
               <div className="mt-8">
                 <WriteQuestionForm
@@ -370,18 +368,18 @@ export default function ContentPage() {
                   dimensions={content.dimensions}
                   initialData={prefillSubmission
                     ? {
-                        scenarioText: prefillSubmission.questionText,
-                        guidanceNote: `Category: ${prefillSubmission.categoryText}`,
-                        modelAnswer: "",
-                        rubricDimensions: [],
-                      }
+                      scenarioText: prefillSubmission.questionText,
+                      guidanceNote: `Category: ${prefillSubmission.categoryText}`,
+                      modelAnswer: "",
+                      rubricDimensions: [],
+                    }
                     : undefined}
                   initialMeta={prefillSubmission
                     ? {
-                        sectionId: prefillSubmission.formatId ?? undefined,
-                        difficulty: "easy" as const,
-                        source: "manual" as const,
-                      }
+                      sectionId: prefillSubmission.formatId ?? undefined,
+                      difficulty: "easy" as const,
+                      source: "manual" as const,
+                    }
                     : undefined}
                   onSubmit={handleCreateQuestion}
                   onCancel={handleCancel}
@@ -389,49 +387,49 @@ export default function ContentPage() {
               </div>
             )}
 
-        {/*  Generate-with-AI form  */}
-        {view === "generate" && (
-          <div className="mt-8">
-            <GenerateQuestionForm
-              formats={content.formats}
-              sections={content.sections}
-              models={ai.models}
-              credits={ai.credits}
-              generating={ai.generating}
-              onGenerate={handleGenerate}
-              onCancel={handleCancel}
-            />
-          </div>
-        )}
-
-        {/* Review AI draft */}
-        {view === "review" && aiDraftData && aiDraftMeta && (
-          <div className="mt-8">
-            {aiDraftMeta.actualCost && (
-              <div className="mb-4 rounded-md border border-mint-200 bg-mint-50 px-4 py-2.5 text-xs text-mint-700">
-                <span className="font-medium">Actual cost: </span>
-                {aiDraftMeta.actualCost.totalUsd < 0.0005 ? "< $0.001" : `$${aiDraftMeta.actualCost.totalUsd.toFixed(3)}`}
-                <span className="text-mint-600">
-                  {" "}({aiDraftMeta.actualCost.promptTokens.toLocaleString()} in / {aiDraftMeta.actualCost.completionTokens.toLocaleString()} out tokens)
-                </span>
+            {/*  Generate-with-AI form  */}
+            {view === "generate" && (
+              <div className="mt-8">
+                <GenerateQuestionForm
+                  formats={content.formats}
+                  sections={content.sections}
+                  models={ai.models}
+                  credits={ai.credits}
+                  generating={ai.generating}
+                  onGenerate={handleGenerate}
+                  onCancel={handleCancel}
+                />
               </div>
             )}
-            <WriteQuestionForm
-              formats={content.formats}
-              sections={content.sections}
-              dimensions={content.dimensions}
-              initialData={aiDraftData}
-              initialMeta={{
-                sectionId: aiDraftMeta.sectionId,
-                difficulty: aiDraftMeta.difficulty,
-                source: "ai_generated",
-                aiModel: aiDraftMeta.model,
-              }}
-              onSubmit={handleCreateQuestion}
-              onCancel={handleCancel}
-            />
-          </div>
-        )}
+
+            {/* Review AI draft */}
+            {view === "review" && aiDraftData && aiDraftMeta && (
+              <div className="mt-8">
+                {aiDraftMeta.actualCost && (
+                  <div className="mb-4 rounded-md border border-mint-200 bg-mint-50 px-4 py-2.5 text-xs text-mint-700">
+                    <span className="font-medium">Actual cost: </span>
+                    {aiDraftMeta.actualCost.totalUsd < 0.0005 ? "< $0.001" : `$${aiDraftMeta.actualCost.totalUsd.toFixed(3)}`}
+                    <span className="text-mint-600">
+                      {" "}({aiDraftMeta.actualCost.promptTokens.toLocaleString()} in / {aiDraftMeta.actualCost.completionTokens.toLocaleString()} out tokens)
+                    </span>
+                  </div>
+                )}
+                <WriteQuestionForm
+                  formats={content.formats}
+                  sections={content.sections}
+                  dimensions={content.dimensions}
+                  initialData={aiDraftData}
+                  initialMeta={{
+                    sectionId: aiDraftMeta.sectionId,
+                    difficulty: aiDraftMeta.difficulty,
+                    source: "ai_generated",
+                    aiModel: aiDraftMeta.model,
+                  }}
+                  onSubmit={handleCreateQuestion}
+                  onCancel={handleCancel}
+                />
+              </div>
+            )}
           </>
         )}
 
