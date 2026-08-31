@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import AdminNav from "@/components/layout/AdminNav";
@@ -23,12 +23,10 @@ export const dynamic = "force-dynamic";
 type Tab = "questions" | "submissions";
 type View = "list" | "chooser" | "write" | "generate" | "review";
 
-export default function ContentPage() {
+function ContentPageInner() {
   const { isLoaded } = useAuth();
   const { can, isLoading: permsLoading } = useAdminPermissions();
   const searchParams = useSearchParams();
-
-  /*  ALL HOOKS MUST BE DECLARED BEFORE ANY EARLY RETURNS  */
 
   const content = useContent();
   const ai = useAiGeneration();
@@ -451,5 +449,24 @@ export default function ContentPage() {
         )}
       </main>
     </>
+  );
+} 
+
+export default function ContentPage() {
+  return (
+    <Suspense
+      fallback={
+        <>
+          <AdminNav />
+          <main className="mx-auto max-w-7xl px-6 py-8">
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-mint-500 border-t-transparent" />
+            </div>
+          </main>
+        </>
+      }
+    >
+      <ContentPageInner />
+    </Suspense>
   );
 }
