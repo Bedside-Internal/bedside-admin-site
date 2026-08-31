@@ -9,7 +9,7 @@ import { useContent } from "@/components/content/useContent";
 import { useAiGeneration } from "@/components/content/useAiGeneration";
 import { ContentFilters } from "@/components/content/ContentFilters";
 import { ContentTable } from "@/components/content/ContentTable";
-import { FormatsSectionsPanel } from "@/components/content/FormatsSectionsPanel";
+import { ManageFormatsSectionsModal } from "@/components/content/ManageFormatsSectionsModal";
 import { NewQuestionChooser } from "@/components/content/NewQuestionChooser";
 import { WriteQuestionForm } from "@/components/content/WriteQuestionForm";
 import { GenerateQuestionForm } from "@/components/content/GenerateQuestionForm";
@@ -34,7 +34,7 @@ function ContentPageInner() {
 
   const [tab, setTab] = useState<Tab>("questions");
   const [view, setView] = useState<View>("list");
-  const [showManage, setShowManage] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
 
   const [filterFormat, setFilterFormat] = useState("");
   const [filterSection, setFilterSection] = useState("");
@@ -160,7 +160,6 @@ function ContentPageInner() {
   /*  Derived render state  */
 
   const showList = view === "list" || view === "chooser";
-  const showManagePanel = showManage && showList;
   const activeError = content.error || ai.error;
 
   /*  Auth / perms gates (now safely AFTER all hooks) ─ */
@@ -275,36 +274,33 @@ function ContentPageInner() {
                 )}
                 <button
                   type="button"
-                  onClick={() => setShowManage((p) => !p)}
+                  onClick={() => setShowManageModal(true)}
                   className="text-sm text-mint-600 hover:text-mint-700"
                 >
-                  {showManage ? "Hide formats & sections" : "Manage formats & sections"}
+                  Manage formats & sections
                 </button>
               </div>
             )}
           </>
         )}
 
-        {/*  Manage panel (inline, persists under chooser)  */}
-        {showManagePanel && tab === "questions" && (
-          <div className="mt-8">
-            <FormatsSectionsPanel
-              formats={content.formats}
-              dimensions={content.dimensions}
-              sections={content.sections}
-              canDelete={can("content", "delete")}
-              onUpsertFormat={content.upsertFormat}
-              onKillFormat={content.killFormat}
-              onRestoreFormat={content.restoreFormat}
-              onUpsertDimension={content.upsertDimension}
-              onKillDimension={content.killDimension}
-              onRestoreDimension={content.restoreDimension}
-              onUpsertSection={content.upsertSection}
-              onKillSection={content.killSection}
-              onRestoreSection={content.restoreSection}
-            />
-          </div>
-        )}
+        <ManageFormatsSectionsModal
+          open={showManageModal}
+          onClose={() => setShowManageModal(false)}
+          formats={content.formats}
+          dimensions={content.dimensions}
+          sections={content.sections}
+          canDelete={can("content", "delete")}
+          onUpsertFormat={content.upsertFormat}
+          onKillFormat={content.killFormat}
+          onRestoreFormat={content.restoreFormat}
+          onUpsertDimension={content.upsertDimension}
+          onKillDimension={content.killDimension}
+          onRestoreDimension={content.restoreDimension}
+          onUpsertSection={content.upsertSection}
+          onKillSection={content.killSection}
+          onRestoreSection={content.restoreSection}
+        />
 
         {/*  Question Bank tab content  */}
         {tab === "questions" && (
