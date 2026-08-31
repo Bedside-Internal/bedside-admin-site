@@ -18,6 +18,8 @@ import { useUserSubmittedQuestions } from "@/hooks/useUserSubmittedQuestions";
 import type { CreateQuestionInput } from "@/types/content";
 import type { UserSubmittedQuestionAdmin } from "@/types/marketing";
 
+export const dynamic = "force-dynamic";
+
 type Tab = "questions" | "submissions";
 type View = "list" | "chooser" | "write" | "generate" | "review";
 
