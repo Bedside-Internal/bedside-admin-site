@@ -16,19 +16,20 @@ function KillReasonModal({
   const [reason, setReason] = useState("");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30">
-      <div className="w-full max-w-md rounded-lg border border-ink/10 bg-white p-6 shadow-lg">
-        <h3 className="font-poppins text-lg font-bold">Confirm deletion</h3>
+      <div className="w-full max-w-md rounded-lg border border-ink/10 bg-white p-5 text-left shadow-lg">
+        <h3 className="font-poppins text-base font-bold">Confirm deletion</h3>
         <p className="mt-1 text-sm text-ink/50">
           Please provide a reason for this deletion.
         </p>
         <textarea
+          autoFocus
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           className="mt-3 w-full rounded-md border border-ink/10 bg-sand/60 px-3 py-2 text-sm outline-none focus:border-mint-500"
           rows={3}
           placeholder="Reason for deletion…"
         />
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-3 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
@@ -40,7 +41,7 @@ function KillReasonModal({
             type="button"
             onClick={() => onConfirm(reason)}
             disabled={!reason.trim()}
-            className="rounded-md bg-coral-500 px-4 py-2 text-sm text-white hover:bg-coral-600 disabled:opacity-40"
+            className="rounded-md bg-coral-500 px-4 py-2 text-sm font-medium text-white hover:bg-coral-600 disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/40"
           >
             Delete
           </button>
@@ -967,14 +968,14 @@ export function FormatsSectionsPanel({
       <FormatsTable
         formats={formats}
         onSave={onUpsertFormat}
-        onKill={canDelete ? onKillFormat : () => {}}
+        onKill={canDelete ? onKillFormat : () => { }}
         onRestore={onRestoreFormat}
       />
       <DimensionsTable
         dimensions={dimensions}
         formats={formats}
         onSave={onUpsertDimension}
-        onKill={canDelete ? onKillDimension : () => {}}
+        onKill={canDelete ? onKillDimension : () => { }}
         onRestore={onRestoreDimension}
       />
       <SectionsTable
@@ -982,7 +983,7 @@ export function FormatsSectionsPanel({
         formats={formats}
         dimensions={dimensions}
         onSave={onUpsertSection}
-        onKill={canDelete ? onKillSection : () => {}}
+        onKill={canDelete ? onKillSection : () => { }}
         onRestore={onRestoreSection}
       />
     </div>
