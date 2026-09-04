@@ -17,6 +17,8 @@ interface GenerateQuestionFormProps {
   models: AiModel[];
   credits: AiCredits | null;
   generating: boolean;
+  initialSectionId?: string;
+  initialTopic?: string;
   onGenerate: (data: { sectionId: string; difficulty: string; model: string; topic: string }) => Promise<void>;
   onCancel: () => void;
 }
@@ -27,13 +29,15 @@ export function GenerateQuestionForm({
   models,
   credits,
   generating,
+  initialSectionId,
+  initialTopic,
   onGenerate,
   onCancel,
 }: GenerateQuestionFormProps) {
-  const [sectionId, setSectionId] = useState("");
+  const [sectionId, setSectionId] = useState(initialSectionId ?? "");
   const [difficulty, setDifficulty] = useState("easy");
   const [model, setModel] = useState("");
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(initialTopic ?? "");
   const [costFilter, setCostFilter] = useState<CostTier | "any">("any");
 
   const activeFormats = formats.filter((f) => !f.killed);

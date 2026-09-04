@@ -16,7 +16,6 @@ import { GenerateQuestionForm } from "@/components/content/GenerateQuestionForm"
 import SubmittedQuestionsContent from "@/components/content/SubmittedQuestionsContent";
 import { useUserSubmittedQuestions } from "@/hooks/useUserSubmittedQuestions";
 import type { CreateQuestionInput } from "@/types/content";
-import type { UserSubmittedQuestionAdmin } from "@/types/marketing";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +44,9 @@ function ContentPageInner() {
     difficulty: "easy" | "medium" | "hard";
     model: string;
     actualCost?: { promptTokens: number; completionTokens: number; totalUsd: number };
+    sourceSubmissionId?: string;
   } | null>(null);
+
   const [aiDraftData, setAiDraftData] = useState<{
     scenarioText: string;
     guidanceNote: string;
@@ -54,19 +55,22 @@ function ContentPageInner() {
   } | null>(null);
 
   // Deep-link prefill from submission approval
-  const [prefillSubmission, setPrefillSubmission] = useState<UserSubmittedQuestionAdmin | null>(null);
+  const [prefillGenerate, setPrefillGenerate] = useState<{
+    sourceSubmissionId: string;
+    sectionId: string;
+    topic: string;
+  } | null>(null);
 
   useEffect(() => {
     const prefill = searchParams.get("prefill");
-    if (prefill?.startsWith("submission:")) {
+    const sectionId = searchParams.get("sectionId");
+    const topic = searchParams.get("topic");
+    if (prefill?.startsWith("submission:") && sectionId) {
       const submissionId = prefill.slice("submission:".length);
-      const submission = submissions.items.find((s) => s.id === submissionId);
-      if (submission) {
-        setPrefillSubmission(submission);
-        setView("write");
-      }
+      setPrefillGenerate({ sourceSubmissionId: submissionId, sectionId, topic: topic ?? "" });
+      setView("generate");
     }
-  }, [searchParams, submissions.items]);
+  }, [searchParams]);
 
   const formatOptions = useMemo(
     () => content.formats.filter((f) => !f.killed),
@@ -107,6 +111,7 @@ function ContentPageInner() {
     setView("list");
     setAiDraftMeta(null);
     setAiDraftData(null);
+    setPrefillGenerate(null);
     ai.clearDraft();
   };
 
@@ -134,6 +139,7 @@ function ContentPageInner() {
         difficulty: result.difficulty as "easy" | "medium" | "hard",
         model: result.model,
         actualCost: result.actualCost,
+        sourceSubmissionId: prefillGenerate?.sourceSubmissionId,
       });
       setAiDraftData({
         scenarioText: result.draft.scenario_text,
@@ -155,6 +161,7 @@ function ContentPageInner() {
     setView("list");
     setAiDraftMeta(null);
     setAiDraftData(null);
+    setPrefillGenerate(null);
   };
 
   /*  Derived render state  */
@@ -362,21 +369,6 @@ function ContentPageInner() {
                   formats={content.formats}
                   sections={content.sections}
                   dimensions={content.dimensions}
-                  initialData={prefillSubmission
-                    ? {
-                      scenarioText: prefillSubmission.questionText,
-                      guidanceNote: `Category: ${prefillSubmission.categoryText}`,
-                      modelAnswer: "",
-                      rubricDimensions: [],
-                    }
-                    : undefined}
-                  initialMeta={prefillSubmission
-                    ? {
-                      sectionId: prefillSubmission.formatId ?? undefined,
-                      difficulty: "easy" as const,
-                      source: "manual" as const,
-                    }
-                    : undefined}
                   onSubmit={handleCreateQuestion}
                   onCancel={handleCancel}
                 />
@@ -392,12 +384,13 @@ function ContentPageInner() {
                   models={ai.models}
                   credits={ai.credits}
                   generating={ai.generating}
+                  initialSectionId={prefillGenerate?.sectionId}
+                  initialTopic={prefillGenerate?.topic}
                   onGenerate={handleGenerate}
                   onCancel={handleCancel}
                 />
               </div>
             )}
-
             {/* Review AI draft */}
             {view === "review" && aiDraftData && aiDraftMeta && (
               <div className="mt-8">
@@ -420,6 +413,7 @@ function ContentPageInner() {
                     difficulty: aiDraftMeta.difficulty,
                     source: "ai_generated",
                     aiModel: aiDraftMeta.model,
+                    sourceSubmissionId: aiDraftMeta.sourceSubmissionId,
                   }}
                   onSubmit={handleCreateQuestion}
                   onCancel={handleCancel}
@@ -440,13 +434,15 @@ function ContentPageInner() {
               pendingActionId={submissions.pendingActionId}
               approve={submissions.approve}
               reject={submissions.reject}
+              formats={content.formats}
+              sections={content.sections}
             />
           </div>
         )}
       </main>
     </>
   );
-} 
+}
 
 export default function ContentPage() {
   return (

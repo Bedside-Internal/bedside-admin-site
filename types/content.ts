@@ -98,6 +98,7 @@ export interface CreateQuestionInput {
     responseMode?: "written" | "video";
     readingTimeSeconds?: number;
     responseTimeSeconds?: number | null;
+    sourceSubmissionId?: string
     stationType?: string;
     competencyTags?: string[];
     source: "manual" | "ai_generated";
