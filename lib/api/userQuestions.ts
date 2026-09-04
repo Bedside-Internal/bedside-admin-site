@@ -53,3 +53,53 @@ export async function rejectUserSubmittedQuestion(
     });
     return handleResponse<{ id: string }>(res);
 }
+
+export interface ShareRequest {
+    id: string;
+    sectionId: string;
+    sectionTitle: string;
+    difficulty: "easy" | "medium" | "hard";
+    ownerUserId: string | null;
+    updatedAt: string;
+}
+
+export async function listShareRequests(token: string | null): Promise<ShareRequest[]> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/content/share-requests`, {
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+    });
+    return handleResponse<ShareRequest[]>(res);
+}
+
+export async function approveShareRequest(
+    token: string | null,
+    id: string,
+): Promise<{ id: string; scope: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/content/share-requests/${id}/approve`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+    });
+    return handleResponse<{ id: string; scope: string }>(res);
+}
+
+export async function rejectShareRequest(
+    token: string | null,
+    id: string,
+): Promise<{ id: string; scope: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/content/share-requests/${id}/reject`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+    });
+    return handleResponse<{ id: string; scope: string }>(res);
+}

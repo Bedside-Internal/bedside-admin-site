@@ -16,10 +16,12 @@ import { GenerateQuestionForm } from "@/components/content/GenerateQuestionForm"
 import SubmittedQuestionsContent from "@/components/content/SubmittedQuestionsContent";
 import { useUserSubmittedQuestions } from "@/hooks/useUserSubmittedQuestions";
 import type { CreateQuestionInput } from "@/types/content";
+import ShareRequestsContent from "@/components/content/ShareRequestsContent";
+import { useShareRequests } from "@/hooks/useShareRequests";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "questions" | "submissions";
+type Tab = "questions" | "submissions" | "shareRequests";
 type View = "list" | "chooser" | "write" | "generate" | "review";
 
 function ContentPageInner() {
@@ -30,6 +32,7 @@ function ContentPageInner() {
   const content = useContent();
   const ai = useAiGeneration();
   const submissions = useUserSubmittedQuestions();
+  const shareRequests = useShareRequests();
 
   const [tab, setTab] = useState<Tab>("questions");
   const [view, setView] = useState<View>("list");
@@ -244,6 +247,7 @@ function ContentPageInner() {
           {[
             { key: "questions" as Tab, label: "Question Bank" },
             { key: "submissions" as Tab, label: "Submitted Questions", badge: submissions.items.filter((i) => i.visibility === "pending").length > 0 ? submissions.items.filter((i) => i.visibility === "pending").length : undefined },
+            { key: "shareRequests" as Tab, label: "Share Requests", badge: shareRequests.items.length > 0 ? shareRequests.items.length : undefined },
           ].map((t) => (
             <button
               key={t.key}
@@ -436,6 +440,20 @@ function ContentPageInner() {
               reject={submissions.reject}
               formats={content.formats}
               sections={content.sections}
+            />
+          </div>
+        )}
+
+        {tab === "shareRequests" && (
+          <div className="mt-8">
+            <ShareRequestsContent
+              items={shareRequests.items}
+              loading={shareRequests.loading}
+              error={shareRequests.error}
+              clearError={shareRequests.clearError}
+              pendingActionId={shareRequests.pendingActionId}
+              approve={shareRequests.approve}
+              reject={shareRequests.reject}
             />
           </div>
         )}
