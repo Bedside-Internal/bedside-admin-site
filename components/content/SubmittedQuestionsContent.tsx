@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import type { UserSubmittedQuestionAdmin } from "@/types/marketing";
+import type { Format, Section } from "@/types/content";
 
 const VISIBILITY_STYLES: Record<UserSubmittedQuestionAdmin["visibility"], string> = {
     private: "text-sand bg-sand/20",
@@ -33,8 +34,10 @@ interface SubmittedQuestionsContentProps {
     error: string | null;
     clearError: () => void;
     pendingActionId: string | null;
-    approve: (id: string) => Promise<void>;
+    approve: (id: string, input?: { sectionId?: string }) => Promise<void>;
     reject: (id: string, input?: { reason?: string }) => Promise<void>;
+    formats: Format[];
+    sections: Section[];
 }
 
 export default function SubmittedQuestionsContent({
@@ -45,6 +48,8 @@ export default function SubmittedQuestionsContent({
     pendingActionId,
     approve,
     reject,
+    formats,
+    sections,
 }: SubmittedQuestionsContentProps) {
     const { can } = useAdminPermissions();
     const canWrite = can("content", "write");
@@ -52,10 +57,38 @@ export default function SubmittedQuestionsContent({
     const [rejectTarget, setRejectTarget] = useState<UserSubmittedQuestionAdmin | null>(null);
     const [rejectReason, setRejectReason] = useState("");
 
-    const handleApprove = async (id: string) => {
-        await approve(id);
-        // Redirect to write question form with prefill
-        router.push(`/admin/content?prefill=submission:${id}`);
+    // Approve now needs a section before it can proceed — submissions never
+    // carry a real sectionId (formatId on a submission is unreliable, see
+    // MyQuestionsClient's free-tier form), so the admin picks one here.
+    const [approveTarget, setApproveTarget] = useState<UserSubmittedQuestionAdmin | null>(null);
+    const [selectedSectionId, setSelectedSectionId] = useState("");
+    const [approving, setApproving] = useState(false);
+
+    const activeFormats = useMemo(() => formats.filter((f) => !f.killed), [formats]);
+    const activeSections = useMemo(() => sections.filter((s) => !s.killed), [sections]);
+
+    const handleApproveClick = (item: UserSubmittedQuestionAdmin) => {
+        setApproveTarget(item);
+        setSelectedSectionId("");
+    };
+
+    const handleApproveConfirm = async () => {
+        if (!approveTarget || !selectedSectionId) return;
+        setApproving(true);
+        try {
+            const { id, questionText } = approveTarget;
+            await approve(id, { sectionId: selectedSectionId });
+            setApproveTarget(null);
+            // Carry sectionId + topic forward in the URL rather than relying
+            // on a post-redirect lookup into `items` — approve() already
+            // drops this submission from local state immediately, so a
+            // find-by-id after redirect would silently come back empty.
+            router.push(
+                `/admin/content?prefill=submission:${id}&sectionId=${selectedSectionId}&topic=${encodeURIComponent(questionText)}`,
+            );
+        } finally {
+            setApproving(false);
+        }
     };
 
     const handleRejectConfirm = async () => {
@@ -81,7 +114,7 @@ export default function SubmittedQuestionsContent({
                 Pending submissions
             </div>
             <p className="mb-6 text-[13px] text-ink/40">
-                Review submitted questions before they go live. Approved questions can be turned into full practice questions via the "Write Question" form.
+                Review submitted questions before they go live. Approving picks a section, then generates a full draft with a real rubric from the submitted text.
             </p>
 
             <div className="rounded-lg border border-ink/10 bg-white">
@@ -157,7 +190,7 @@ export default function SubmittedQuestionsContent({
                                     {canWrite && item.visibility === "pending" ? (
                                         <>
                                             <button
-                                                onClick={() => handleApprove(item.id)}
+                                                onClick={() => handleApproveClick(item)}
                                                 disabled={busy}
                                                 className="rounded-md border border-ink/15 bg-white px-3.5 py-1.5 text-[13px] font-bold text-ink transition-colors hover:bg-sand disabled:cursor-not-allowed disabled:opacity-50"
                                             >
@@ -180,6 +213,61 @@ export default function SubmittedQuestionsContent({
                     })
                 )}
             </div>
+
+            {/* Approve — section picker */}
+            {approveTarget && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/35"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setApproveTarget(null);
+                    }}
+                >
+                    <div className="w-[90%] max-w-[440px] rounded-xl bg-white p-6 shadow-xl">
+                        <h3 className="mb-1.5 text-[16px] font-semibold text-ink">Approve this submission</h3>
+                        <p className="mb-4 text-[13px] text-ink/50">
+                            Pick which section this belongs to. You&apos;ll generate a full draft with a real rubric from the submitted text next.
+                        </p>
+
+                        <label className="mb-1 block text-xs font-medium text-ink/50">Section</label>
+                        <select
+                            className="mb-4 w-full rounded-md border border-ink/10 bg-sand/60 px-3 py-2 text-sm outline-none focus:border-mint-500"
+                            value={selectedSectionId}
+                            onChange={(e) => setSelectedSectionId(e.target.value)}
+                        >
+                            <option value="">Select section…</option>
+                            {activeFormats.map((f) => {
+                                const fmtSections = activeSections.filter((s) => s.formatId === f.id);
+                                if (fmtSections.length === 0) return null;
+                                return (
+                                    <optgroup key={f.id} label={f.title}>
+                                        {fmtSections.map((s) => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.title}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                );
+                            })}
+                        </select>
+
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setApproveTarget(null)}
+                                className="rounded-md border border-ink/15 bg-white px-4 py-2 text-[13px] text-ink transition-colors hover:bg-sand"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleApproveConfirm}
+                                disabled={!selectedSectionId || approving}
+                                className="rounded-md bg-mint px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-mint/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {approving ? "Approving…" : "Approve & Continue"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Reject confirm */}
             {rejectTarget && (

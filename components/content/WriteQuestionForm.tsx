@@ -19,6 +19,7 @@ interface WriteQuestionFormProps {
         difficulty?: "easy" | "medium" | "hard";
         source: "manual" | "ai_generated";
         aiModel?: string;
+        sourceSubmissionId?: string;
     };
     onSubmit: (data: CreateQuestionInput) => Promise<void>;
     onCancel: () => void;
@@ -78,6 +79,7 @@ export function WriteQuestionForm({
                 scoringRubric: { dimensions: rubricDims },
                 source: initialMeta?.source ?? "manual",
                 aiModel: initialMeta?.aiModel,
+                sourceSubmissionId: initialMeta?.sourceSubmissionId,
             });
         } catch (err: any) {
             if (err?.status === 422) {
