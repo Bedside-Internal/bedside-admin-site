@@ -7,7 +7,11 @@ import type {
     TestimonialAudience,
     TestimonialAvatarShape,
     TestimonialAccent,
+    TestimonialAvatarImage,
 } from "@/types/marketing";
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const accents: { value: TestimonialAccent; color: string }[] = [
     { value: "mint", color: "bg-mint" },
@@ -40,6 +44,11 @@ export default function TestimonialFormModal({
     const [enabled, setEnabled] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
+    const [avatarImage, setAvatarImage] = useState<TestimonialAvatarImage | undefined>(undefined);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [readingPhoto, setReadingPhoto] = useState(false);
+    const [photoError, setPhotoError] = useState<string | null>(null);
+
     useEffect(() => {
         if (open) {
             if (initial) {
@@ -51,6 +60,12 @@ export default function TestimonialFormModal({
                 setAvatarShape(initial.avatarShape);
                 setAccent(initial.accent);
                 setEnabled(initial.enabled);
+                setAvatarImage(initial.avatarImage);
+                setAvatarPreview(
+                    initial.avatarImage
+                        ? `data:${initial.avatarImage.contentType};base64,${initial.avatarImage.data}`
+                        : null,
+                );
             } else {
                 setName("");
                 setSubtitle("");
@@ -60,7 +75,11 @@ export default function TestimonialFormModal({
                 setAvatarShape("circle");
                 setAccent("mint");
                 setEnabled(true);
+                setAvatarImage(undefined);
+                setAvatarPreview(null);
             }
+
+            setPhotoError(null);
         }
     }, [open, initial]);
 
@@ -90,11 +109,46 @@ export default function TestimonialFormModal({
                 avatarShape,
                 accent,
                 enabled,
+                ...(avatarImage ? { avatarImage } : {}),
             });
             onClose();
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handlePhotoChange = (file: File | null) => {
+        if (!file) return;
+        setPhotoError(null);
+
+        if (!ACCEPTED_TYPES.includes(file.type)) {
+            setPhotoError("Please use a JPEG, PNG, or WebP image.");
+            return;
+        }
+        if (file.size > MAX_PHOTO_BYTES) {
+            setPhotoError("Image must be under 5 MB.");
+            return;
+        }
+
+        setReadingPhoto(true);
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result as string; // "data:image/png;base64,...."
+            const base64 = result.split(",")[1] ?? "";
+            setAvatarImage({ data: base64, contentType: file.type as TestimonialAvatarImage["contentType"] });
+            setAvatarPreview(result);
+            setReadingPhoto(false);
+        };
+        reader.onerror = () => {
+            setPhotoError("Couldn't read that file — try again.");
+            setReadingPhoto(false);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemovePhoto = () => {
+        setAvatarImage(undefined);
+        setAvatarPreview(null);
     };
 
     return (
@@ -162,8 +216,8 @@ export default function TestimonialFormModal({
                                         type="button"
                                         onClick={() => setAudience(opt)}
                                         className={`rounded-md px-4 py-1.5 text-[13px] font-medium capitalize transition-colors ${audience === opt
-                                                ? "bg-mint text-white"
-                                                : "border border-ink/15 bg-white text-ink hover:bg-sand"
+                                            ? "bg-mint text-white"
+                                            : "border border-ink/15 bg-white text-ink hover:bg-sand"
                                             }`}
                                     >
                                         {opt}
@@ -187,6 +241,50 @@ export default function TestimonialFormModal({
                         />
                     </div>
 
+                    {/* Avatar Photo */}
+                    <div>
+                        <label className="mb-1.5 block text-[13px] font-medium text-ink">
+                            Avatar photo <span className="text-ink/30">(optional — falls back to initials)</span>
+                        </label>
+                        <div className="flex items-center gap-3">
+                            {avatarPreview ? (
+                                <img
+                                    src={avatarPreview}
+                                    alt="Avatar preview"
+                                    className={`h-14 w-14 object-cover ${avatarShape === "circle" ? "rounded-full" : "rounded-md"}`}
+                                />
+                            ) : (
+                                <div
+                                    className={`flex h-14 w-14 items-center justify-center bg-sand text-[13px] font-semibold text-ink/40 ${avatarShape === "circle" ? "rounded-full" : "rounded-md"}`}
+                                >
+                                    {avatarLabel || "—"}
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="inline-flex w-fit cursor-pointer items-center rounded-md border border-ink/15 bg-white px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-sand">
+                                    {readingPhoto ? "Reading…" : avatarPreview ? "Replace" : "Upload photo"}
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        disabled={readingPhoto}
+                                        onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+                                    />
+                                </label>
+                                {avatarPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemovePhoto}
+                                        className="text-left text-[12px] font-medium text-coral hover:underline"
+                                    >
+                                        Remove photo
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {photoError && <p className="mt-1.5 text-[12px] text-coral">{photoError}</p>}
+                    </div>
+
                     {/* Avatar shape toggle */}
                     <div>
                         <label className="mb-1.5 block text-[13px] font-medium text-ink">
@@ -201,8 +299,8 @@ export default function TestimonialFormModal({
                                     type="button"
                                     onClick={() => setAvatarShape(opt)}
                                     className={`rounded-md px-4 py-1.5 text-[13px] font-medium capitalize transition-colors ${avatarShape === opt
-                                            ? "bg-mint text-white"
-                                            : "border border-ink/15 bg-white text-ink hover:bg-sand"
+                                        ? "bg-mint text-white"
+                                        : "border border-ink/15 bg-white text-ink hover:bg-sand"
                                         }`}
                                 >
                                     {opt}
