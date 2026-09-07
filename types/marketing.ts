@@ -15,6 +15,11 @@ export interface UpdateTestimonialCollectionConfigInput {
     rolloutPercent?: number;
 }
 
+export type TestimonialAvatarImage = {
+    data: string;
+    contentType: "image/jpeg" | "image/png" | "image/webp";
+};
+
 export interface AdminTestimonial {
     id: string;
     name: string;
@@ -22,6 +27,7 @@ export interface AdminTestimonial {
     quote: string;
     audience: TestimonialAudience;
     avatarLabel: string;
+    avatarImage?: TestimonialAvatarImage;
     avatarShape: TestimonialAvatarShape;
     accent: TestimonialAccent;
     enabled: boolean;
@@ -36,6 +42,7 @@ export interface CreateTestimonialInput {
     quote: string;
     audience: TestimonialAudience;
     avatarLabel: string;
+    avatarImage?: TestimonialAvatarImage;
     avatarShape: TestimonialAvatarShape;
     accent: TestimonialAccent;
     enabled: boolean;
