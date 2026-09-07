@@ -47,6 +47,8 @@ export interface TestimonialSubmissionAdmin {
     id: string;
     rating: number;
     quote: string;
+    photoData: string | null;
+    photoContentType: "image/jpeg" | "image/png" | "image/webp" | null;
     subtitle: string | null;
     audience: TestimonialAudience;
     nameDisplay: TestimonialNameDisplay;

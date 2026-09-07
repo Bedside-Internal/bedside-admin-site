@@ -184,6 +184,10 @@ export default function SubmissionsContent({
                 ) : (
                     items.map((item, i) => {
                         const busy = pendingActionId === item.id;
+                        const photoSrc =
+                            item.photoData && item.photoContentType
+                                ? `data:${item.photoContentType};base64,${item.photoData}`
+                                : null;
                         return (
                             <div
                                 key={item.id}
@@ -200,8 +204,25 @@ export default function SubmissionsContent({
                                     )}
                                 </div>
                                 <div className="w-[180px] flex-shrink-0 px-3">
-                                    <div className="text-[14px] font-semibold text-ink">{item.submittedByName}</div>
-                                    <div className="truncate text-[12px] text-ink/40">{item.submittedByEmail}</div>
+                                    <div className="flex items-center gap-2">
+                                        {photoSrc && (
+                                            <img
+                                                src={photoSrc}
+                                                alt={`${item.submittedByName}'s testimonial photo`}
+                                                className="h-12 w-12 flex-shrink-0 rounded-full object-cover"
+                                            />
+                                        )}
+
+                                        <div className="min-w-0">
+                                            <div className="text-[14px] font-semibold text-ink">
+                                                {item.submittedByName}
+                                            </div>
+
+                                            <div className="truncate text-[12px] text-ink/40">
+                                                {item.submittedByEmail}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="w-[110px] flex-shrink-0 px-3">
                                     <span
