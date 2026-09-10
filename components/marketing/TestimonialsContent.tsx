@@ -10,8 +10,7 @@ import TestimonialFormModal from "./TestimonialFormModal";
 
 export default function TestimonialsContent() {
     const { can } = useAdminPermissions();
-    const { items, loading, error, clearError, add, update, remove, move } =
-        useTestimonials();
+    const { items, loading, error, clearError, add, update, remove, move, uploadPhoto } = useTestimonials();
 
     const canWrite = can("marketing", "write");
     const canDelete = can("marketing", "delete");
@@ -154,6 +153,7 @@ export default function TestimonialsContent() {
                     setEditingItem(null);
                 }}
                 onSubmit={handleFormSubmit}
+                onUploadPhoto={uploadPhoto}
             />
 
             {/* Delete confirm modal */}
