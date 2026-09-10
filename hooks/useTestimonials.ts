@@ -117,5 +117,6 @@ export function useTestimonials() {
         update,
         remove,
         move,
+        uploadPhoto
     };
 }
