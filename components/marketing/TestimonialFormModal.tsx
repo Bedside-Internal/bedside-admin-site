@@ -25,6 +25,7 @@ interface TestimonialFormModalProps {
     initial: AdminTestimonial | null;
     onClose: () => void;
     onSubmit: (input: CreateTestimonialInput) => Promise<void>;
+    onUploadPhoto: (file: File) => Promise<TestimonialAvatarImage>;
 }
 
 export default function TestimonialFormModal({
@@ -32,6 +33,7 @@ export default function TestimonialFormModal({
     initial,
     onClose,
     onSubmit,
+    onUploadPhoto,
 }: TestimonialFormModalProps) {
     const [name, setName] = useState("");
     const [subtitle, setSubtitle] = useState("");
@@ -117,7 +119,7 @@ export default function TestimonialFormModal({
         }
     };
 
-    const handlePhotoChange = (file: File | null) => {
+    const handlePhotoChange = async (file: File | null) => {
         if (!file) return;
         setPhotoError(null);
 
@@ -130,23 +132,24 @@ export default function TestimonialFormModal({
             return;
         }
 
+        const objectUrl = URL.createObjectURL(file);
+        setAvatarPreview(objectUrl); // instant local preview, no network round trip
+
         setReadingPhoto(true);
-        const reader = new FileReader();
-        reader.onload = () => {
-            const result = reader.result as string; // "data:image/png;base64,...."
-            const base64 = result.split(",")[1] ?? "";
-            setAvatarImage({ data: base64, contentType: file.type as TestimonialAvatarImage["contentType"] });
-            setAvatarPreview(result);
+        try {
+            const uploaded = await onUploadPhoto(file); // hits the resize endpoint
+            setAvatarImage(uploaded);
+        } catch (err) {
+            setPhotoError(err instanceof Error ? err.message : "Couldn't upload that photo — try again.");
+            setAvatarPreview(null);
+            URL.revokeObjectURL(objectUrl);
+        } finally {
             setReadingPhoto(false);
-        };
-        reader.onerror = () => {
-            setPhotoError("Couldn't read that file — try again.");
-            setReadingPhoto(false);
-        };
-        reader.readAsDataURL(file);
+        }
     };
 
     const handleRemovePhoto = () => {
+        if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
         setAvatarImage(undefined);
         setAvatarPreview(null);
     };
