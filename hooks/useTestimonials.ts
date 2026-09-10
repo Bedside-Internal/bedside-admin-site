@@ -12,7 +12,9 @@ import {
 import type {
     AdminTestimonial,
     CreateTestimonialInput,
+    TestimonialAvatarImage,
 } from "@/types/marketing";
+import { uploadTestimonialPhoto } from "@/lib/api/testimonialPhoto";
 
 export function useTestimonials() {
     const { getToken } = useAuth();
@@ -95,6 +97,15 @@ export function useTestimonials() {
             }
         },
         [items, getToken, refetch]
+    );
+
+    const uploadPhoto = useCallback(
+        async (file: File): Promise<TestimonialAvatarImage> => {
+            const token = await getToken();
+            const { photoData, photoContentType } = await uploadTestimonialPhoto(token, file);
+            return { data: photoData, contentType: photoContentType as TestimonialAvatarImage["contentType"] };
+        },
+        [getToken],
     );
 
     return {
