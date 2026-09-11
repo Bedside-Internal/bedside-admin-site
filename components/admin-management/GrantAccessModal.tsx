@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AdminRole, GrantAdminAccessInput } from "@/types/admin";
+import UserCombobox from "./UserCombobox";
 
 interface GrantAccessModalProps {
   isOpen: boolean;
@@ -48,22 +49,7 @@ export default function GrantAccessModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* User ID Input */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">
-              User ID (Internal UUID)
-            </label>
-            <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="e.g. 1a2b3c4d-..."
-              required
-              className="w-full rounded-lg border border-ink/10 bg-sand/60 px-3 py-2 font-mono text-sm text-ink placeholder:text-ink/30 focus:border-violet focus:outline-none focus:ring-2 focus:ring-violet/30"
-            />
-            <p className="mt-1 text-[11px] text-ink/40">
-              Paste the internal UUID of the user from the Users tab.
-            </p>
-          </div>
+          <UserCombobox onSelect={(u) => setUserId(u.id)} />
 
           {/* Role Select */}
           <div>
