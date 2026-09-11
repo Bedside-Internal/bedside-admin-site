@@ -9,6 +9,7 @@ const RESOURCES: AdminResource[] = [
   "feature_flags",
   "billing",
   "admin_management",
+  "marketing",
 ];
 
 const ACTIONS: AdminAction[] = ["read", "write", "delete"];

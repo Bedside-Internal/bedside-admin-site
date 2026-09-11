@@ -26,7 +26,7 @@ export default function CreateRoleModal({
   const [permissions, setPermissions] = useState<PermissionMatrix>(() => {
     const init = {} as PermissionMatrix;
     const resources: Array<keyof PermissionMatrix> = [
-      "users", "content", "ai_generation", "feature_flags", "billing", "admin_management"
+      "users", "content", "ai_generation", "feature_flags", "billing", "admin_management", "marketing"
     ];
     resources.forEach((r) => (init[r] = []));
     return init;
