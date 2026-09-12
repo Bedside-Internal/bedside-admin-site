@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import type { Format, Dimension, Section } from "@/types/content";
 
@@ -603,14 +603,13 @@ function SectionsTable({
     slug: string;
     subtitle?: string;
     iconKey?: string;
+    transitionTip?: string;
     sortOrder?: number;
   }) => Promise<any>;
   onKill: (id: string, reason: string) => void;
   onRestore: (id: string) => void;
 }) {
-  const [edits, setEdits] = useState<Record<string, Record<string, string>>>(
-    {},
-  );
+  const [edits, setEdits] = useState<Record<string, Record<string, string>>>({});
   const [newRow, setNewRow] = useState<{
     formatId: string;
     dimensionId: string;
@@ -618,31 +617,21 @@ function SectionsTable({
     slug: string;
     subtitle: string;
     iconKey: string;
+    transitionTip: string;
     sortOrder: string;
   } | null>(null);
 
-  const v = (id: string, field: string, fallback: string) =>
-    edits[id]?.[field] ?? fallback ?? "";
+  const v = (id: string, field: string, fallback: string) => edits[id]?.[field] ?? fallback ?? "";
+  const set = (id: string, field: string, value: string) => setEdits((p) => ({ ...p, [id]: { ...p[id], [field]: value } }));
 
-  const set = (id: string, field: string, value: string) =>
-    setEdits((p) => ({ ...p, [id]: { ...p[id], [field]: value } }));
-
-  const fmtOpts = formats
-    .filter((f) => !f.killed)
-    .map((f) => ({ value: f.id, label: f.title }));
+  const fmtOpts = formats.filter((f) => !f.killed).map((f) => ({ value: f.id, label: f.title }));
 
   const saveExisting = async (s: Section) => {
     const e = edits[s.id];
     if (!e) return;
-    const hasChange = Object.entries(e).some(
-      ([k, val]) => String((s as any)[k] ?? "") !== val,
-    );
+    const hasChange = Object.entries(e).some(([k, val]) => String((s as any)[k] ?? "") !== val);
     if (!hasChange) {
-      setEdits((p) => {
-        const n = { ...p };
-        delete n[s.id];
-        return n;
-      });
+      setEdits((p) => { const n = { ...p }; delete n[s.id]; return n; });
       return;
     }
     try {
@@ -652,27 +641,17 @@ function SectionsTable({
         dimensionId: e.dimensionId !== undefined ? e.dimensionId : s.dimensionId ?? "",
         title: e.title ?? s.title,
         slug: e.slug ?? s.slug,
-        subtitle:
-          e.subtitle !== undefined ? e.subtitle : s.subtitle ?? "",
+        subtitle: e.subtitle !== undefined ? e.subtitle : s.subtitle ?? "",
         iconKey: e.iconKey !== undefined ? e.iconKey : s.iconKey ?? "",
-        sortOrder:
-          e.sortOrder !== undefined
-            ? Number(e.sortOrder)
-            : s.sortOrder,
+        transitionTip: e.transitionTip !== undefined ? e.transitionTip : s.transitionTip ?? "",
+        sortOrder: e.sortOrder !== undefined ? Number(e.sortOrder) : s.sortOrder,
       });
-      setEdits((p) => {
-        const n = { ...p };
-        delete n[s.id];
-        return n;
-      });
-    } catch {
-      /* handled by hook */
-    }
+      setEdits((p) => { const n = { ...p }; delete n[s.id]; return n; });
+    } catch { /* handled by hook */ }
   };
 
   const saveNew = async () => {
-    if (!newRow || !newRow.formatId || !newRow.title.trim() || !newRow.slug.trim())
-      return;
+    if (!newRow || !newRow.formatId || !newRow.title.trim() || !newRow.slug.trim()) return;
     try {
       await onSave({
         formatId: newRow.formatId,
@@ -681,18 +660,15 @@ function SectionsTable({
         slug: newRow.slug,
         subtitle: newRow.subtitle || undefined,
         iconKey: newRow.iconKey || undefined,
+        transitionTip: newRow.transitionTip || undefined,
         sortOrder: newRow.sortOrder ? Number(newRow.sortOrder) : undefined,
       });
       setNewRow(null);
-    } catch {
-      /* handled by hook */
-    }
+    } catch { /* handled by hook */ }
   };
 
   const dimOptsForFormat = (formatId: string) =>
-    dimensions
-      .filter((d) => d.formatId === formatId && !d.killed)
-      .map((d) => ({ value: d.id, label: d.label }));
+    dimensions.filter((d) => d.formatId === formatId && !d.killed).map((d) => ({ value: d.id, label: d.label }));
 
   return (
     <div>
@@ -705,87 +681,53 @@ function SectionsTable({
               <th className={c}>FORMAT</th>
               <th className={c}>DIMENSION</th>
               <th className={c}>SLUG</th>
+              <th className={c}>SUBTITLE</th>
+              <th className={c}>ICON (lucide-react name)</th>
+              <th className={c}>TRANSITION TIP</th>
               <th className={c}>SORT</th>
               <th className={`${c} w-20`} />
             </tr>
           </thead>
           <tbody>
             {sections.map((s) => {
-              const fmtTitle =
-                formats.find((f) => f.id === s.formatId)?.title ?? "—";
-              const dimLabel = s.dimensionId
-                ? dimensions.find((d) => d.id === s.dimensionId)?.label ?? "—"
-                : "—";
-              const currentDimFormatId = edits[s.id]?.formatId
-                ? undefined
-                : s.formatId;
-              const dimOpts = currentDimFormatId
-                ? dimOptsForFormat(currentDimFormatId)
-                : [];
+              const fmtTitle = formats.find((f) => f.id === s.formatId)?.title ?? "—";
+              const dimLabel = s.dimensionId ? dimensions.find((d) => d.id === s.dimensionId)?.label ?? "—" : "—";
+              const currentDimFormatId = edits[s.id]?.formatId ? undefined : s.formatId;
+              const dimOpts = currentDimFormatId ? dimOptsForFormat(currentDimFormatId) : [];
               return (
-                <tr
-                  key={s.id}
-                  className={`border-b border-ink/5 last:border-0 ${s.killed ? "opacity-40" : ""}`}
-                >
+                <tr key={s.id} className={`border-b border-ink/5 last:border-0 ${s.killed ? "opacity-40" : ""}`}>
                   <td className={c}>
-                    <input
-                      className={inp}
-                      value={v(s.id, "title", s.title)}
-                      onChange={(e) => set(s.id, "title", e.target.value)}
-                      onBlur={() => saveExisting(s)}
-                      disabled={s.killed}
-                    />
+                    <input className={inp} value={v(s.id, "title", s.title)} onChange={(e) => set(s.id, "title", e.target.value)} onBlur={() => saveExisting(s)} disabled={s.killed} />
                   </td>
-                  <td className={c}>
-                    <span className="text-ink/60">{fmtTitle}</span>
-                  </td>
+                  <td className={c}><span className="text-ink/60">{fmtTitle}</span></td>
                   <td className={c}>
                     {s.killed ? (
                       <span className="text-ink/40">{dimLabel}</span>
                     ) : (
-                      <select
-                        className={sel}
-                        value={edits[s.id]?.dimensionId ?? s.dimensionId ?? ""}
-                        onChange={(e) => set(s.id, "dimensionId", e.target.value)}
-                        onBlur={() => saveExisting(s)}
-                      >
+                      <select className={sel} value={edits[s.id]?.dimensionId ?? s.dimensionId ?? ""} onChange={(e) => set(s.id, "dimensionId", e.target.value)} onBlur={() => saveExisting(s)}>
                         <option value="">—</option>
-                        {dimOpts.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
+                        {dimOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     )}
                   </td>
                   <td className={c}>
-                    <input
-                      className={inp}
-                      value={v(s.id, "slug", s.slug)}
-                      onChange={(e) => set(s.id, "slug", e.target.value)}
-                      onBlur={() => saveExisting(s)}
-                      disabled={s.killed}
-                    />
+                    <input className={inp} value={v(s.id, "slug", s.slug)} onChange={(e) => set(s.id, "slug", e.target.value)} onBlur={() => saveExisting(s)} disabled={s.killed} />
                   </td>
                   <td className={c}>
-                    <input
-                      type="number"
-                      className={inp}
-                      value={v(s.id, "sortOrder", String(s.sortOrder))}
-                      onChange={(e) => set(s.id, "sortOrder", e.target.value)}
-                      onBlur={() => saveExisting(s)}
-                      disabled={s.killed}
-                    />
+                    <input className={inp} placeholder="—" value={v(s.id, "subtitle", s.subtitle ?? "")} onChange={(e) => set(s.id, "subtitle", e.target.value)} onBlur={() => saveExisting(s)} disabled={s.killed} />
+                  </td>
+                  <td className={c}>
+                    <input className={inp} placeholder="e.g. HeartHandshake" value={v(s.id, "iconKey", s.iconKey ?? "")} onChange={(e) => set(s.id, "iconKey", e.target.value)} onBlur={() => saveExisting(s)} disabled={s.killed} />
+                  </td>
+                  <td className={c}>
+                    <input className={inp} placeholder="—" value={v(s.id, "transitionTip", s.transitionTip ?? "")} onChange={(e) => set(s.id, "transitionTip", e.target.value)} onBlur={() => saveExisting(s)} disabled={s.killed} />
+                  </td>
+                  <td className={c}>
+                    <input type="number" className={inp} value={v(s.id, "sortOrder", String(s.sortOrder))} onChange={(e) => set(s.id, "sortOrder", e.target.value)} onBlur={() => saveExisting(s)} disabled={s.killed} />
                   </td>
                   <td className={`${c} text-right`}>
                     {s.killed ? (
-                      <button
-                        type="button"
-                        onClick={() => onRestore(s.id)}
-                        className="text-xs font-medium text-mint-600 hover:text-mint-700"
-                      >
-                        Restore
-                      </button>
+                      <button type="button" onClick={() => onRestore(s.id)} className="text-xs font-medium text-mint-600 hover:text-mint-700">Restore</button>
                     ) : (
                       <KillButton onKill={(r) => onKill(s.id, r)} />
                     )}
@@ -796,83 +738,37 @@ function SectionsTable({
             {newRow && (
               <tr className="border-b border-ink/5">
                 <td className={c}>
-                  <input
-                    className={inp}
-                    placeholder="Title"
-                    value={newRow.title}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, title: e.target.value })
-                    }
-                  />
+                  <input className={inp} placeholder="Title" value={newRow.title} onChange={(e) => setNewRow({ ...newRow, title: e.target.value })} />
                 </td>
                 <td className={c}>
-                  <select
-                    className={sel}
-                    value={newRow.formatId}
-                    onChange={(e) =>
-                      setNewRow({
-                        ...newRow,
-                        formatId: e.target.value,
-                        dimensionId: "",
-                      })
-                    }
-                  >
+                  <select className={sel} value={newRow.formatId} onChange={(e) => setNewRow({ ...newRow, formatId: e.target.value, dimensionId: "" })}>
                     <option value="">Select format…</option>
-                    {fmtOpts.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
+                    {fmtOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </td>
                 <td className={c}>
-                  <select
-                    className={sel}
-                    value={newRow.dimensionId}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, dimensionId: e.target.value })
-                    }
-                  >
+                  <select className={sel} value={newRow.dimensionId} onChange={(e) => setNewRow({ ...newRow, dimensionId: e.target.value })}>
                     <option value="">—</option>
-                    {dimOptsForFormat(newRow.formatId).map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
+                    {dimOptsForFormat(newRow.formatId).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </td>
                 <td className={c}>
-                  <input
-                    className={inp}
-                    placeholder="slug"
-                    value={newRow.slug}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, slug: e.target.value })
-                    }
-                  />
+                  <input className={inp} placeholder="slug" value={newRow.slug} onChange={(e) => setNewRow({ ...newRow, slug: e.target.value })} />
                 </td>
                 <td className={c}>
-                  <input
-                    type="number"
-                    className={inp}
-                    placeholder="0"
-                    value={newRow.sortOrder}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, sortOrder: e.target.value })
-                    }
-                  />
+                  <input className={inp} placeholder="Subtitle (optional)" value={newRow.subtitle} onChange={(e) => setNewRow({ ...newRow, subtitle: e.target.value })} />
+                </td>
+                <td className={c}>
+                  <input className={inp} placeholder="e.g. HeartHandshake" value={newRow.iconKey} onChange={(e) => setNewRow({ ...newRow, iconKey: e.target.value })} />
+                </td>
+                <td className={c}>
+                  <input className={inp} placeholder="Shown on the break screen" value={newRow.transitionTip} onChange={(e) => setNewRow({ ...newRow, transitionTip: e.target.value })} />
+                </td>
+                <td className={c}>
+                  <input type="number" className={inp} placeholder="0" value={newRow.sortOrder} onChange={(e) => setNewRow({ ...newRow, sortOrder: e.target.value })} />
                 </td>
                 <td className={`${c} text-right`}>
-                  <button
-                    type="button"
-                    onClick={saveNew}
-                    disabled={
-                      !newRow.formatId ||
-                      !newRow.title.trim() ||
-                      !newRow.slug.trim()
-                    }
-                    className="text-xs font-medium text-mint-600 hover:text-mint-700 disabled:opacity-40"
-                  >
+                  <button type="button" onClick={saveNew} disabled={!newRow.formatId || !newRow.title.trim() || !newRow.slug.trim()} className="text-xs font-medium text-mint-600 hover:text-mint-700 disabled:opacity-40">
                     Save
                   </button>
                 </td>
@@ -883,22 +779,11 @@ function SectionsTable({
       </div>
       <button
         type="button"
-        onClick={() =>
-          setNewRow({
-            formatId: "",
-            dimensionId: "",
-            title: "",
-            slug: "",
-            subtitle: "",
-            iconKey: "",
-            sortOrder: "",
-          })
-        }
+        onClick={() => setNewRow({ formatId: "", dimensionId: "", title: "", slug: "", subtitle: "", iconKey: "", transitionTip: "", sortOrder: "" })}
         disabled={!!newRow}
         className="mt-2 w-full rounded-lg border border-dashed border-ink/15 py-2 text-sm text-mint-600 hover:border-mint-400 hover:bg-mint-50/50 disabled:opacity-40"
       >
-        <Plus className="mr-1 inline h-3.5 w-3.5" />
-        Add section
+        + Add section
       </button>
     </div>
   );
@@ -960,11 +845,52 @@ export function FormatsSectionsPanel({
   onKillSection,
   onRestoreSection,
 }: FormatsSectionsPanelProps) {
+  const [formatFilter, setFormatFilter] = useState<string>("all");
+
+  const formatOpts = useMemo(
+    () => formats.filter((f) => !f.killed).map((f) => ({ value: f.id, label: f.title })),
+    [formats],
+  );
+
+  const filteredDimensions = useMemo(() => {
+    const filtered = formatFilter === "all" ? dimensions : dimensions.filter((d) => d.formatId === formatFilter);
+    return [...filtered].sort((a, b) => {
+      const fmtA = formats.find((f) => f.id === a.formatId)?.title ?? "";
+      const fmtB = formats.find((f) => f.id === b.formatId)?.title ?? "";
+      return fmtA.localeCompare(fmtB) || a.sortOrder - b.sortOrder;
+    });
+  }, [dimensions, formats, formatFilter]);
+
+  const filteredSections = useMemo(() => {
+    const filtered = formatFilter === "all" ? sections : sections.filter((s) => s.formatId === formatFilter);
+    return [...filtered].sort((a, b) => {
+      const fmtA = formats.find((f) => f.id === a.formatId)?.title ?? "";
+      const fmtB = formats.find((f) => f.id === b.formatId)?.title ?? "";
+      return fmtA.localeCompare(fmtB) || a.sortOrder - b.sortOrder;
+    });
+  }, [sections, formats, formatFilter]);
+
   return (
     <div className="space-y-6">
-      <label className="text-xs font-semibold tracking-wider text-mint-600">
-        FORMATS &amp; SECTIONS
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold tracking-wider text-mint-600">
+          FORMATS &amp; SECTIONS
+        </label>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-ink/40">Filter dimensions/sections:</span>
+          <select
+            className="rounded border border-ink/10 bg-sand/60 px-2 py-1 text-sm outline-none focus:border-mint-500"
+            value={formatFilter}
+            onChange={(e) => setFormatFilter(e.target.value)}
+          >
+            <option value="all">All formats</option>
+            {formatOpts.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <FormatsTable
         formats={formats}
         onSave={onUpsertFormat}
@@ -972,14 +898,14 @@ export function FormatsSectionsPanel({
         onRestore={onRestoreFormat}
       />
       <DimensionsTable
-        dimensions={dimensions}
+        dimensions={filteredDimensions}
         formats={formats}
         onSave={onUpsertDimension}
         onKill={canDelete ? onKillDimension : () => { }}
         onRestore={onRestoreDimension}
       />
       <SectionsTable
-        sections={sections}
+        sections={filteredSections}
         formats={formats}
         dimensions={dimensions}
         onSave={onUpsertSection}

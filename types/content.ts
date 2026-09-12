@@ -41,6 +41,7 @@ export interface Section {
     slug: string;
     subtitle: string | null;
     iconKey: string | null;
+    transitionTip: string | null;
     sortOrder: number;
     killed: boolean;
     killReason: string | null;

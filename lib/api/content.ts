@@ -156,6 +156,7 @@ export function createSection(
         slug: string;
         subtitle?: string;
         iconKey?: string;
+        transitionTip?: string;
         sortOrder?: number;
     },
 ) {
@@ -175,6 +176,7 @@ export function patchSection(
         slug?: string;
         subtitle?: string;
         iconKey?: string;
+        transitionTip?: string;
         sortOrder?: number;
     },
 ) {
