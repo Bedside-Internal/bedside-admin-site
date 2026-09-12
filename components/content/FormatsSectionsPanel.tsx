@@ -4,6 +4,24 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import type { Format, Dimension, Section } from "@/types/content";
 
+
+type SortDir = "asc" | "desc";
+
+function SortableHeader({ label, active, dir, onClick }: { label: string; active: boolean; dir: SortDir; onClick: () => void }) {
+  return (
+    <th className={c}>
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-1 text-xs font-semibold tracking-wider text-ink/50 hover:text-ink/80"
+      >
+        {label}
+        {active && <span className="text-[10px]">{dir === "asc" ? "▲" : "▼"}</span>}
+      </button>
+    </th>
+  );
+}
+
 /* Kill-reason modal */
 
 function KillReasonModal({
@@ -340,6 +358,30 @@ function DimensionsTable({
   onKill: (id: string, reason: string) => void;
   onRestore: (id: string) => void;
 }) {
+  const [sortKey, setSortKey] = useState<"label" | "format" | "slug" | "sortOrder" | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function toggleSort(key: NonNullable<typeof sortKey>) {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  }
+
+  const sortedDimensions = useMemo(() => {
+    if (!sortKey) return dimensions;
+    const withMeta = dimensions.map((d) => ({ row: d, format: formats.find((f) => f.id === d.formatId)?.title ?? "" }));
+    withMeta.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "label": cmp = a.row.label.localeCompare(b.row.label); break;
+        case "format": cmp = a.format.localeCompare(b.format); break;
+        case "slug": cmp = a.row.slug.localeCompare(b.row.slug); break;
+        case "sortOrder": cmp = a.row.sortOrder - b.row.sortOrder; break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return withMeta.map((m) => m.row);
+  }, [dimensions, sortKey, sortDir, formats]);
+
   const [edits, setEdits] = useState<Record<string, Record<string, string>>>(
     {},
   );
@@ -620,11 +662,46 @@ function SectionsTable({
     transitionTip: string;
     sortOrder: string;
   } | null>(null);
+  const [sortKey, setSortKey] = useState<"title" | "format" | "dimension" | "slug" | "subtitle" | "iconKey" | "transitionTip" | "sortOrder" | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function toggleSort(key: NonNullable<typeof sortKey>) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   const v = (id: string, field: string, fallback: string) => edits[id]?.[field] ?? fallback ?? "";
   const set = (id: string, field: string, value: string) => setEdits((p) => ({ ...p, [id]: { ...p[id], [field]: value } }));
-
   const fmtOpts = formats.filter((f) => !f.killed).map((f) => ({ value: f.id, label: f.title }));
+  const dimOptsForFormat = (formatId: string) => dimensions.filter((d) => d.formatId === formatId && !d.killed).map((d) => ({ value: d.id, label: d.label }));
+
+  const sortedSections = useMemo(() => {
+    if (!sortKey) return sections;
+    const withMeta = sections.map((s) => ({
+      row: s,
+      format: formats.find((f) => f.id === s.formatId)?.title ?? "",
+      dimension: s.dimensionId ? dimensions.find((d) => d.id === s.dimensionId)?.label ?? "" : "",
+    }));
+    withMeta.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "title": cmp = a.row.title.localeCompare(b.row.title); break;
+        case "format": cmp = a.format.localeCompare(b.format); break;
+        case "dimension": cmp = a.dimension.localeCompare(b.dimension); break;
+        case "slug": cmp = a.row.slug.localeCompare(b.row.slug); break;
+        case "subtitle": cmp = (a.row.subtitle ?? "").localeCompare(b.row.subtitle ?? ""); break;
+        case "iconKey": cmp = (a.row.iconKey ?? "").localeCompare(b.row.iconKey ?? ""); break;
+        case "transitionTip": cmp = (a.row.transitionTip ?? "").localeCompare(b.row.transitionTip ?? ""); break;
+        case "sortOrder": cmp = a.row.sortOrder - b.row.sortOrder; break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return withMeta.map((m) => m.row);
+  }, [sections, sortKey, sortDir, formats, dimensions]);
 
   const saveExisting = async (s: Section) => {
     const e = edits[s.id];
@@ -667,24 +744,21 @@ function SectionsTable({
     } catch { /* handled by hook */ }
   };
 
-  const dimOptsForFormat = (formatId: string) =>
-    dimensions.filter((d) => d.formatId === formatId && !d.killed).map((d) => ({ value: d.id, label: d.label }));
-
   return (
     <div>
       <h3 className="mb-2 text-sm font-semibold text-ink/70">Sections</h3>
       <div className="overflow-x-auto rounded-lg border border-ink/10">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-ink/10 text-left text-xs font-semibold tracking-wider text-ink/50">
-              <th className={c}>TITLE</th>
-              <th className={c}>FORMAT</th>
-              <th className={c}>DIMENSION</th>
-              <th className={c}>SLUG</th>
-              <th className={c}>SUBTITLE</th>
-              <th className={c}>ICON (lucide-react name)</th>
-              <th className={c}>TRANSITION TIP</th>
-              <th className={c}>SORT</th>
+            <tr className="border-b border-ink/10 text-left">
+              <SortableHeader label="TITLE" active={sortKey === "title"} dir={sortDir} onClick={() => toggleSort("title")} />
+              <SortableHeader label="FORMAT" active={sortKey === "format"} dir={sortDir} onClick={() => toggleSort("format")} />
+              <SortableHeader label="DIMENSION" active={sortKey === "dimension"} dir={sortDir} onClick={() => toggleSort("dimension")} />
+              <SortableHeader label="SLUG" active={sortKey === "slug"} dir={sortDir} onClick={() => toggleSort("slug")} />
+              <SortableHeader label="SUBTITLE" active={sortKey === "subtitle"} dir={sortDir} onClick={() => toggleSort("subtitle")} />
+              <SortableHeader label="ICON (lucide-react name)" active={sortKey === "iconKey"} dir={sortDir} onClick={() => toggleSort("iconKey")} />
+              <SortableHeader label="TRANSITION TIP" active={sortKey === "transitionTip"} dir={sortDir} onClick={() => toggleSort("transitionTip")} />
+              <SortableHeader label="SORT" active={sortKey === "sortOrder"} dir={sortDir} onClick={() => toggleSort("sortOrder")} />
               <th className={`${c} w-20`} />
             </tr>
           </thead>
