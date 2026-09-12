@@ -41,6 +41,7 @@ export interface Section {
     slug: string;
     subtitle: string | null;
     iconKey: string | null;
+    transitionTip: string | null;
     sortOrder: number;
     killed: boolean;
     killReason: string | null;
@@ -85,6 +86,8 @@ export interface Question {
     scoringRubric: ScoringRubric;
     createdAt: string;
     updatedAt: string;
+    prompts: { id?: string; text: string }[];
+    videoUrl?: string | null;
 }
 
 export interface CreateQuestionInput {
@@ -98,11 +101,13 @@ export interface CreateQuestionInput {
     responseMode?: "written" | "video";
     readingTimeSeconds?: number;
     responseTimeSeconds?: number | null;
-    sourceSubmissionId?: string
+    sourceSubmissionId?: string;
     stationType?: string;
     competencyTags?: string[];
     source: "manual" | "ai_generated";
     aiModel?: string;
+    prompts?: { id?: string; text: string }[];
+    videoUrl?: string | null;
 }
 
 export interface AiModel {
@@ -124,6 +129,7 @@ export interface AiCredits {
 
 export interface AiGeneratedDraft {
     scenario_text: string;
+    prompts?: { text: string }[];
     guidance_note: string;
     model_answer: string;
     scoring_rubric: {
@@ -141,4 +147,9 @@ export interface AiGenerateQuestionResponse {
         completionTokens: number;
         totalUsd: number;
     };
+}
+
+export interface ScenarioPrompt {
+    id: string;
+    text: string;
 }
