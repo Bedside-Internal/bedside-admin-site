@@ -13,6 +13,8 @@ interface WriteQuestionFormProps {
         guidanceNote: string;
         modelAnswer: string;
         rubricDimensions: ScoringRubricDimension[];
+        prompts?: { text: string }[];
+        videoUrl?: string | null;
     };
     initialMeta?: {
         sectionId?: string;
@@ -20,6 +22,7 @@ interface WriteQuestionFormProps {
         source: "manual" | "ai_generated";
         aiModel?: string;
         sourceSubmissionId?: string;
+        responseMode?: "written" | "video";
     };
     onSubmit: (data: CreateQuestionInput) => Promise<void>;
     onCancel: () => void;
@@ -53,6 +56,24 @@ export function WriteQuestionForm({
     const [rubricError, setRubricError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
+    const [prompts, setPrompts] = useState<{ text: string }[]>(
+        initialData?.prompts?.length ? initialData.prompts : [{ text: "" }],
+    );
+    const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl ?? "");
+    const [responseMode, setResponseMode] = useState<"written" | "video">(
+        initialMeta?.responseMode ?? "written",
+    );
+
+    function addPrompt() {
+        setPrompts((p) => [...p, { text: "" }]);
+    }
+    function removePrompt(index: number) {
+        setPrompts((p) => p.filter((_, i) => i !== index));
+    }
+    function updatePrompt(index: number, text: string) {
+        setPrompts((p) => p.map((prompt, i) => (i === index ? { text } : prompt)));
+    }
+
     const activeFormats = formats.filter((f) => !f.killed);
     const activeSections = sections.filter((s) => !s.killed);
 
@@ -77,9 +98,12 @@ export function WriteQuestionForm({
                 guidanceNote,
                 modelAnswer,
                 scoringRubric: { dimensions: rubricDims },
+                responseMode,
                 source: initialMeta?.source ?? "manual",
                 aiModel: initialMeta?.aiModel,
                 sourceSubmissionId: initialMeta?.sourceSubmissionId,
+                prompts: prompts.filter((p) => p.text.trim().length > 0),
+                videoUrl: videoUrl.trim() || null,
             });
         } catch (err: any) {
             if (err?.status === 422) {
@@ -98,17 +122,12 @@ export function WriteQuestionForm({
     return (
         <div>
             <label className="text-xs font-semibold tracking-wider text-mint-600">
-                {initialMeta?.source === "ai_generated"
-                    ? "REVIEW AI DRAFT"
-                    : "NEW QUESTION"}
+                {initialMeta?.source === "ai_generated" ? "REVIEW AI DRAFT" : "NEW QUESTION"}
             </label>
 
-            {/* Row: section + difficulty */}
             <div className="mt-4 flex items-end gap-4">
                 <div className="flex-1">
-                    <label className="mb-1 block text-xs font-medium text-ink/50">
-                        Section
-                    </label>
+                    <label className="mb-1 block text-xs font-medium text-ink/50">Section</label>
                     <select
                         className={`w-full ${selectClass}`}
                         value={sectionId}
@@ -120,16 +139,12 @@ export function WriteQuestionForm({
                     >
                         <option value="">Select section…</option>
                         {activeFormats.map((f) => {
-                            const fmtSections = activeSections.filter(
-                                (s) => s.formatId === f.id,
-                            );
+                            const fmtSections = activeSections.filter((s) => s.formatId === f.id);
                             if (fmtSections.length === 0) return null;
                             return (
                                 <optgroup key={f.id} label={f.title}>
                                     {fmtSections.map((s) => (
-                                        <option key={s.id} value={s.id}>
-                                            {s.title}
-                                        </option>
+                                        <option key={s.id} value={s.id}>{s.title}</option>
                                     ))}
                                 </optgroup>
                             );
@@ -137,15 +152,11 @@ export function WriteQuestionForm({
                     </select>
                 </div>
                 <div className="w-40">
-                    <label className="mb-1 block text-xs font-medium text-ink/50">
-                        Difficulty
-                    </label>
+                    <label className="mb-1 block text-xs font-medium text-ink/50">Difficulty</label>
                     <select
                         className={`w-full ${selectClass}`}
                         value={difficulty}
-                        onChange={(e) =>
-                            setDifficulty(e.target.value as "easy" | "medium" | "hard")
-                        }
+                        onChange={(e) => setDifficulty(e.target.value as "easy" | "medium" | "hard")}
                     >
                         <option value="easy">Easy</option>
                         <option value="medium">Medium</option>
@@ -154,12 +165,9 @@ export function WriteQuestionForm({
                 </div>
             </div>
 
-            {/* Textareas */}
             <div className="mt-6 space-y-4">
                 <div>
-                    <label className="mb-1 block text-xs font-medium text-ink/50">
-                        Scenario
-                    </label>
+                    <label className="mb-1 block text-xs font-medium text-ink/50">Scenario</label>
                     <textarea
                         className={textareaClass}
                         rows={5}
@@ -169,9 +177,7 @@ export function WriteQuestionForm({
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-xs font-medium text-ink/50">
-                        Guidance note
-                    </label>
+                    <label className="mb-1 block text-xs font-medium text-ink/50">Guidance note</label>
                     <textarea
                         className={textareaClass}
                         rows={3}
@@ -181,9 +187,7 @@ export function WriteQuestionForm({
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-xs font-medium text-ink/50">
-                        Model answer
-                    </label>
+                    <label className="mb-1 block text-xs font-medium text-ink/50">Model answer</label>
                     <textarea
                         className={textareaClass}
                         rows={5}
@@ -194,7 +198,44 @@ export function WriteQuestionForm({
                 </div>
             </div>
 
-            {/* Rubric */}
+            <div className="mt-4">
+                <label className="mb-1 block text-xs font-medium text-ink/50">Scenario video URL (optional)</label>
+                <input
+                    type="url"
+                    className={`w-full ${textareaClass}`}
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="Leave blank for a text-only scenario"
+                />
+            </div>
+
+            <div className="mt-4">
+                <label className="mb-1 block text-xs font-medium text-ink/50">Response mode</label>
+                <select className={selectClass} value={responseMode} onChange={(e) => setResponseMode(e.target.value as "written" | "video")}>
+                    <option value="written">Written (typed)</option>
+                    <option value="video">Video (recorded)</option>
+                </select>
+            </div>
+
+            <div className="mt-4">
+                <label className="mb-1 block text-xs font-medium text-ink/50">Prompts</label>
+                {prompts.map((p, i) => (
+                    <div key={i} className="mb-2 flex gap-2">
+                        <textarea
+                            className={`flex-1 ${textareaClass}`}
+                            value={p.text}
+                            onChange={(e) => updatePrompt(i, e.target.value)}
+                            placeholder={`Q${i + 1}...`}
+                            rows={2}
+                        />
+                        {prompts.length > 1 && (
+                            <button type="button" onClick={() => removePrompt(i)} className="text-xs text-coral-600">Remove</button>
+                        )}
+                    </div>
+                ))}
+                <button type="button" onClick={addPrompt} className="text-xs font-semibold text-mint-600">+ Add prompt</button>
+            </div>
+
             <div className="mt-6">
                 <RubricEditor
                     dimensions={rubricDims}
@@ -207,7 +248,6 @@ export function WriteQuestionForm({
                 />
             </div>
 
-            {/* Footer */}
             <div className="mt-8 flex items-center gap-3">
                 <button
                     type="button"
@@ -225,11 +265,7 @@ export function WriteQuestionForm({
                 >
                     {submitting ? "Saving…" : "Save as draft"}
                 </button>
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="text-sm text-mint-600 hover:text-mint-700"
-                >
+                <button type="button" onClick={onCancel} className="text-sm text-mint-600 hover:text-mint-700">
                     Cancel
                 </button>
             </div>

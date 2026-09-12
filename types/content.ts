@@ -100,11 +100,13 @@ export interface CreateQuestionInput {
     responseMode?: "written" | "video";
     readingTimeSeconds?: number;
     responseTimeSeconds?: number | null;
-    sourceSubmissionId?: string
+    sourceSubmissionId?: string;
     stationType?: string;
     competencyTags?: string[];
     source: "manual" | "ai_generated";
     aiModel?: string;
+    prompts?: { id?: string; text: string }[];
+    videoUrl?: string | null;
 }
 
 export interface AiModel {
@@ -147,6 +149,6 @@ export interface AiGenerateQuestionResponse {
 }
 
 export interface ScenarioPrompt {
-    id: string; // stable id, referenced by rubric/judge — generate client-side (crypto.randomUUID()) if new
+    id: string;
     text: string;
 }
