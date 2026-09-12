@@ -236,7 +236,13 @@ export function WriteQuestionForm({
                 <button type="button" onClick={addPrompt} className="text-xs font-semibold text-mint-600">+ Add prompt</button>
             </div>
 
+
             <div className="mt-6">
+                {prompts.filter((p) => p.text.trim().length > 0).length > 1 && (
+                    <p className="mb-2 text-xs text-ink/40">
+                        Applies across all questions in this scenario; weights aren't split per question.
+                    </p>
+                )}
                 <RubricEditor
                     dimensions={rubricDims}
                     availableDimensions={availableDimensions}
