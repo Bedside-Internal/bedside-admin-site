@@ -85,6 +85,8 @@ export interface Question {
     scoringRubric: ScoringRubric;
     createdAt: string;
     updatedAt: string;
+    prompts: { id?: string; text: string }[];
+    videoUrl?: string | null;
 }
 
 export interface CreateQuestionInput {
@@ -124,6 +126,7 @@ export interface AiCredits {
 
 export interface AiGeneratedDraft {
     scenario_text: string;
+    prompts?: { text: string }[];
     guidance_note: string;
     model_answer: string;
     scoring_rubric: {
@@ -141,4 +144,9 @@ export interface AiGenerateQuestionResponse {
         completionTokens: number;
         totalUsd: number;
     };
+}
+
+export interface ScenarioPrompt {
+    id: string; // stable id, referenced by rubric/judge — generate client-side (crypto.randomUUID()) if new
+    text: string;
 }
