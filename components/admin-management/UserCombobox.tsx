@@ -24,8 +24,8 @@ export default function UserCombobox({ onSelect }: UserComboboxProps) {
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(async () => {
             const token = await getToken();
-            const users = await getUsers(token, query.trim());
-            setResults(users);
+            const response = await getUsers(token, query.trim());
+            setResults(response.users);
             setOpen(true);
         }, 250);
         return () => clearTimeout(debounceRef.current);
