@@ -51,3 +51,8 @@ export interface AccountDeletion {
 export interface RestoreAccountDeletionInput {
   newClerkId: string;
 }
+
+export interface ListUsersResponse {
+  users: AdminUserDTO[];
+  total: number;
+}

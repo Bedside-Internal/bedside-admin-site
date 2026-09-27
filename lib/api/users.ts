@@ -3,6 +3,7 @@ import {
     UpdateUserPayload,
     GrantAttemptsPayload,
     ApiErrorResponse,
+    ListUsersResponse,
 } from "@/types/user";
 
 const API_BASE_URL =
@@ -55,7 +56,7 @@ export async function getUsers(
     search?: string,
     page?: number,
     limit?: number
-): Promise<AdminUserDTO[]> {
+): Promise<ListUsersResponse> {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (page) params.set("page", page.toString());
@@ -71,7 +72,7 @@ export async function getUsers(
         }
     );
 
-    return handleResponse<AdminUserDTO[]>(res);
+    return handleResponse<ListUsersResponse>(res);
 }
 
 export async function updateUser(

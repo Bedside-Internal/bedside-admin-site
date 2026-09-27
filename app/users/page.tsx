@@ -10,11 +10,16 @@ import UserTable from "@/components/users/UserTable";
 import UserDetailPanel from "@/components/users/UserDetailPanel";
 import AccountDeletionsModal from "@/components/users/AccountDeletionsModal";
 import { toast } from "sonner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 20;
 
 export default function UsersPage() {
     const { getToken, isLoaded } = useAuth();
 
     const [users, setUsers] = useState<User[]>([]);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isForbidden, setIsForbidden] = useState(false);
@@ -33,31 +38,28 @@ export default function UsersPage() {
 
         try {
             const token = await getToken();
-            const data = await getUsers(token, search);
+            const { users: data, total } = await getUsers(token, search, page, PAGE_SIZE);
             setUsers(data);
+            setTotal(total);
         } catch (err: any) {
             if (err instanceof ApiError) {
-                if (err.status === 403) {
-                    setIsForbidden(true);
-                    return; // Don't set generic error
-                }
-                if (err.status === 404) {
-                    setIsPendingSetup(true);
-                    return; // Don't set generic error
-                }
+                if (err.status === 403) { setIsForbidden(true); return; }
+                if (err.status === 404) { setIsPendingSetup(true); return; }
             }
-            // Fallback for 500s or generic errors
             setError(err.message || "Failed to load users");
         } finally {
             setIsLoading(false);
         }
-    }, [getToken, search]);
+    }, [getToken, search, page]);
 
     useEffect(() => {
-        if (isLoaded) {
-            fetchUsers();
-        }
+        if (isLoaded) fetchUsers();
     }, [isLoaded, fetchUsers]);
+
+    // reset to page 1 whenever the search term changes
+    useEffect(() => {
+        setPage(1);
+    }, [search]);
 
     const handleUpdate = async (id: string, payload: UpdateUserPayload) => {
         try {
@@ -136,7 +138,7 @@ export default function UsersPage() {
                             Users &amp; Support
                         </h1>
                         <span className="text-sm text-ink/50">
-                            {users.length} of {users.length}
+                            {total === 0 ? "0 results" : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
                         </span>
                         <button
                             onClick={() => setShowDeletionsModal(true)}
@@ -169,6 +171,30 @@ export default function UsersPage() {
                                 selectedUserId={selectedUserId}
                                 onSelectUser={setSelectedUserId}
                             />
+                        )}
+
+                        {!isLoading && total > PAGE_SIZE && (
+                            <div className="flex items-center justify-between border-t border-ink/10 px-6 py-3">
+                                <button
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                    className="flex items-center gap-1 rounded-md border border-ink/15 px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-sand disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                    Previous
+                                </button>
+                                <span className="text-sm text-ink/50">
+                                    Page {page} of {Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                                </span>
+                                <button
+                                    onClick={() => setPage((p) => p + 1)}
+                                    disabled={page * PAGE_SIZE >= total}
+                                    className="flex items-center gap-1 rounded-md border border-ink/15 px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-sand disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
