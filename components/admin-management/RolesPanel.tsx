@@ -6,6 +6,7 @@ import { AdminRole, PermissionMatrix, CreateRoleInput } from "@/types/admin";
 import { listRoles, createRole, updateRole } from "@/lib/api/admin";
 import CreateRoleModal from "./CreateRoleModal";
 import PermissionGrid from "./PermissionGrid";
+import { toast } from "sonner";
 
 interface RolesPanelProps {
   canWrite: boolean;
@@ -48,7 +49,7 @@ export default function RolesPanel({ canWrite }: RolesPanelProps) {
       setIsModalOpen(false);
       fetchRoles();
     } catch (err: any) {
-      alert(err.message || "Failed to create role");
+      toast.error(err.message || "Failed to create role");
     } finally {
       setIsCreating(false);
     }
@@ -73,7 +74,7 @@ export default function RolesPanel({ canWrite }: RolesPanelProps) {
       setExpandedId(null);
       fetchRoles();
     } catch (err: any) {
-      alert(err.message || "Failed to update permissions");
+      toast.error(err.message || "Failed to update permissions");
     } finally {
       setIsSaving(false);
     }

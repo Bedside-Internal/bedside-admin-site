@@ -18,7 +18,8 @@ export async function handleResponse<T>(res: Response): Promise<T> {
         const errData: ApiErrorResponse = await res.json().catch(() => ({
             error: "Request failed",
         }));
-        throw new Error(errData.error || `HTTP ${res.status}`);
+        const fieldMsg = Object.values(errData.details?.fieldErrors ?? {}).flat()[0];
+        throw new Error(fieldMsg || errData.error || `HTTP ${res.status}`);
     }
     if (res.status === 204) return undefined as T;
     return res.json();

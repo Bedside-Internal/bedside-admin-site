@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { AdminUserRow, AdminRole, GrantAdminAccessInput } from "@/types/admin";
 import { listAdmins, listRoles, grantAdminAccess, updateAdminAccess, revokeAdminAccess, grantOwnerStatus, revokeOwnerStatus } from "@/lib/api/admin";
 import GrantAccessModal from "./GrantAccessModal";
+import { toast } from "sonner";
 
 interface AdminsPanelProps {
   canWrite: boolean;
@@ -60,7 +61,7 @@ export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId 
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to grant access");
+      toast.error(err.message || "Failed to grant access");
     } finally {
       setIsGranting(false);
     }
@@ -73,7 +74,7 @@ export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId 
       await revokeAdminAccess(token, id);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to revoke access");
+      toast.error(err.message || "Failed to revoke access");
     }
   };
 
@@ -84,13 +85,13 @@ export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId 
       await grantOwnerStatus(token, id);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to grant owner status");
+      toast.error(err.message || "Failed to grant owner status");
     }
   };
 
   const handleRemoveOwner = async (id: string, isLast: boolean) => {
     if (isLast) {
-      alert("Can't remove the last owner — make someone else an owner first.");
+      toast.error("Can't remove the last owner. Make someone else an owner first.");
       return;
     }
     if (!confirm("Remove owner status from this admin?")) return;
@@ -99,7 +100,7 @@ export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId 
       await revokeOwnerStatus(token, id);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to revoke owner status");
+      toast.error(err.message || "Failed to revoke owner status");
     }
   };
 
@@ -111,7 +112,7 @@ export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId 
       if (selfAdminId) await revokeOwnerStatus(token, selfAdminId);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to transfer ownership");
+      toast.error(err.message || "Failed to transfer ownership");
     }
   };
 
@@ -134,7 +135,7 @@ export default function AdminsPanel({ canWrite, canDelete, isOwner, selfAdminId 
       setExpandedId(null);
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to update role");
+      toast.error(err.message || "Failed to update role");
     } finally {
       setIsSaving(false);
     }

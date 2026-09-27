@@ -30,6 +30,7 @@ export interface GrantAttemptsPayload {
 
 export interface ApiErrorResponse {
   error: string;
+  details?: { fieldErrors?: Record<string, string[]> }
 }
 
 export type AccountDeletionStatus = "pending" | "completed" | "restored";

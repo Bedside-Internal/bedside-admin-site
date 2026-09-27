@@ -41,7 +41,8 @@ async function handleResponse<T>(res: Response): Promise<T> {
         const errData: ApiErrorResponse = await res.json().catch(() => ({
             error: "Request failed",
         }));
-        throw new ApiError(errData.error || `HTTP ${res.status}`, res.status);
+        const fieldMsg = Object.values(errData.details?.fieldErrors ?? {}).flat()[0];
+        throw new ApiError(fieldMsg || errData.error || `HTTP ${res.status}`, res.status);
     }
 
     // Handle 204 No Content

@@ -9,6 +9,7 @@ import UserSearch from "@/components/users/UserSearch";
 import UserTable from "@/components/users/UserTable";
 import UserDetailPanel from "@/components/users/UserDetailPanel";
 import AccountDeletionsModal from "@/components/users/AccountDeletionsModal";
+import { toast } from "sonner";
 
 export default function UsersPage() {
     const { getToken, isLoaded } = useAuth();
@@ -64,7 +65,7 @@ export default function UsersPage() {
             await updateUser(token, id, payload);
             await fetchUsers();
         } catch (err: any) {
-            alert(err.message || "Failed to update user");
+            toast.error(err.message || "Failed to update user");
         }
     };
 
@@ -74,7 +75,7 @@ export default function UsersPage() {
             await grantAttempts(token, id, payload);
             await fetchUsers();
         } catch (err: any) {
-            alert(err.message || "Failed to grant attempts");
+            toast.error(err.message || "Failed to grant attempts");
         }
     };
 
