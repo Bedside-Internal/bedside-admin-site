@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dmSans, instrumentSerif, poppins } from "@/lib/fonts";
 import { Toaster } from "sonner";
+import IdleSessionGuard from "@/components/layout/IdleSessionGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default function RootLayout({
       <html lang="en" className={`${dmSans.variable} ${instrumentSerif.variable} ${poppins.variable}`}>
         <body className="font-dm bg-cream text-ink antialiased">
           {children}
+          <IdleSessionGuard idleMinutes={15} warnMinutes={1} />
           <Toaster richColors position="top-right" />
         </body>
       </html>
