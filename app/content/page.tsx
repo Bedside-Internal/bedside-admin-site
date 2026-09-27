@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
-import { useAuth } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
+import AdminGate from "@/components/layout/AdminGate";
 import AdminNav from "@/components/layout/AdminNav";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { useContent } from "@/components/content/useContent";
@@ -23,10 +23,9 @@ export const dynamic = "force-dynamic";
 
 type Tab = "questions" | "submissions" | "shareRequests";
 type View = "list" | "chooser" | "write" | "generate" | "review";
+type Can = ReturnType<typeof useAdminPermissions>["can"];
 
-function ContentPageInner() {
-  const { isLoaded } = useAuth();
-  const { can, isLoading: permsLoading } = useAdminPermissions();
+function ContentPageInner({ can }: { can: Can }) {
   const searchParams = useSearchParams();
 
   const content = useContent();
@@ -172,42 +171,7 @@ function ContentPageInner() {
   const showList = view === "list" || view === "chooser";
   const activeError = content.error || ai.error;
 
-  /*  Auth / perms gates (now safely AFTER all hooks) ─ */
-
-  if (!isLoaded || permsLoading) {
-    return (
-      <>
-        <AdminNav />
-        <main className="mx-auto max-w-7xl px-6 py-8">
-          <div className="flex h-64 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-mint-500 border-t-transparent" />
-          </div>
-        </main>
-      </>
-    );
-  }
-
-  if (!can("content", "read")) {
-    return (
-      <>
-        <AdminNav />
-        <main className="mx-auto max-w-7xl px-6 py-8">
-          <div className="flex h-64 items-center justify-center">
-            <div className="text-center">
-              <p className="font-poppins text-lg font-bold text-coral-500">
-                Access denied
-              </p>
-              <p className="mt-1 text-sm text-ink/50">
-                You don&apos;t have permission to view content management.
-              </p>
-            </div>
-          </div>
-        </main>
-      </>
-    );
-  }
-
-  /*  Main render ─ */
+  /*  Main render — AdminGate already handled loading/pending/forbidden ─ */
 
   return (
     <>
@@ -464,19 +428,26 @@ function ContentPageInner() {
 
 export default function ContentPage() {
   return (
-    <Suspense
-      fallback={
-        <>
-          <AdminNav />
-          <main className="mx-auto max-w-7xl px-6 py-8">
-            <div className="flex h-64 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-mint-500 border-t-transparent" />
-            </div>
-          </main>
-        </>
-      }
+    <AdminGate
+      resource="content"
+      deniedMessage="You don't have permission to view content management."
     >
-      <ContentPageInner />
-    </Suspense>
+      {({ can }) => (
+        <Suspense
+          fallback={
+            <>
+              <AdminNav />
+              <main className="mx-auto max-w-7xl px-6 py-8">
+                <div className="flex h-64 items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-mint-500 border-t-transparent" />
+                </div>
+              </main>
+            </>
+          }
+        >
+          <ContentPageInner can={can} />
+        </Suspense>
+      )}
+    </AdminGate>
   );
 }

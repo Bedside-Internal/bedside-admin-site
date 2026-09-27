@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { User, UpdateUserPayload, GrantAttemptsPayload } from "@/types/user";
-import { ApiError, getUsers, updateUser, grantAttempts } from "@/lib/api/users";
+import { getUsers, updateUser, grantAttempts } from "@/lib/api/users";
+import AdminGate from "@/components/layout/AdminGate";
 import AdminNav from "@/components/layout/AdminNav";
 import UserSearch from "@/components/users/UserSearch";
 import UserTable from "@/components/users/UserTable";
@@ -14,16 +15,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
-export default function UsersPage() {
-    const { getToken, isLoaded } = useAuth();
+function UsersPageContent() {
+    const { getToken } = useAuth();
 
     const [users, setUsers] = useState<User[]>([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isForbidden, setIsForbidden] = useState(false);
-    const [isPendingSetup, setIsPendingSetup] = useState(false);
 
     const [search, setSearch] = useState("");
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -33,8 +32,6 @@ export default function UsersPage() {
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        setIsForbidden(false);
-        setIsPendingSetup(false);
 
         try {
             const token = await getToken();
@@ -42,10 +39,10 @@ export default function UsersPage() {
             setUsers(data);
             setTotal(total);
         } catch (err: any) {
-            if (err instanceof ApiError) {
-                if (err.status === 403) { setIsForbidden(true); return; }
-                if (err.status === 404) { setIsPendingSetup(true); return; }
-            }
+            // AdminGate already vets read access to this page before we ever get
+            // here — a failure at this point (search 400s, transient 500s, a
+            // permission revoked mid-session) is the generic case, same as every
+            // other page's data-fetching hooks.
             setError(err.message || "Failed to load users");
         } finally {
             setIsLoading(false);
@@ -53,8 +50,8 @@ export default function UsersPage() {
     }, [getToken, search, page]);
 
     useEffect(() => {
-        if (isLoaded) fetchUsers();
-    }, [isLoaded, fetchUsers]);
+        fetchUsers();
+    }, [fetchUsers]);
 
     // reset to page 1 whenever the search term changes
     useEffect(() => {
@@ -84,42 +81,6 @@ export default function UsersPage() {
     const filteredUsers = users;
     const selectedUser = users.find((u) => u.id === selectedUserId) ?? null;
 
-    // --- Specific Error/State UI ---
-    if (isForbidden) {
-        return (
-            <div className="flex min-h-screen flex-col bg-cream font-dm text-ink">
-                <AdminNav />
-                <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                    <h2 className="font-poppins text-2xl font-bold text-coral">
-                        Access Denied
-                    </h2>
-                    <p className="mt-2 max-w-sm text-sm text-ink/50">
-                        You are authenticated, but your account does not have admin
-                        permissions to view this page.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    if (isPendingSetup) {
-        return (
-            <div className="flex min-h-screen flex-col bg-cream font-dm text-ink">
-                <AdminNav />
-                <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-mint border-t-transparent" />
-                    <h2 className="mt-4 font-poppins text-2xl font-bold text-ink">
-                        Setting up your account...
-                    </h2>
-                    <p className="mt-2 max-w-sm text-sm text-ink/50">
-                        This usually resolves in a few moments once your profile syncs.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    // --- Main UI ---
     return (
         <div className="flex min-h-screen flex-col bg-cream font-dm text-ink">
             <AdminNav />
@@ -208,5 +169,16 @@ export default function UsersPage() {
             </main>
             {showDeletionsModal && <AccountDeletionsModal onClose={() => setShowDeletionsModal(false)} />}
         </div>
+    );
+}
+
+export default function UsersPage() {
+    return (
+        <AdminGate
+            resource="users"
+            deniedMessage="You are authenticated, but your account does not have admin permissions to view this page."
+        >
+            {() => <UsersPageContent />}
+        </AdminGate>
     );
 }

@@ -1,38 +1,13 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import AdminGate from "@/components/layout/AdminGate";
 import AdminNav from "@/components/layout/AdminNav";
 import FeaturesContent from "@/components/features/FeaturesContent";
 
-export default function FeaturesPage() {
-  const { isLoaded } = useAuth();
-  const { can, isLoading: permsLoading } = useAdminPermissions();
+type Can = ReturnType<typeof useAdminPermissions>["can"];
 
-  if (!isLoaded || permsLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-cream font-dm text-ink/40">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-mint border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!can("feature_flags", "read")) {
-    return (
-      <div className="flex min-h-screen flex-col bg-cream font-dm text-ink">
-        <AdminNav />
-        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <h2 className="font-poppins text-2xl font-bold text-coral">
-            Access Denied
-          </h2>
-          <p className="mt-2 max-w-sm text-sm text-ink/50">
-            You do not have permission to view feature flags.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+function FeaturesPageContent({ can }: { can: Can }) {
   return (
     <div className="flex min-h-screen flex-col bg-cream font-dm text-ink">
       <AdminNav />
@@ -64,5 +39,16 @@ export default function FeaturesPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function FeaturesPage() {
+  return (
+    <AdminGate
+      resource="feature_flags"
+      deniedMessage="You do not have permission to view feature flags."
+    >
+      {({ can }) => <FeaturesPageContent can={can} />}
+    </AdminGate>
   );
 }
