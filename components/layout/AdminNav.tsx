@@ -1,5 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth, useClerk, useUser } from "@clerk/nextjs";
+import { LogOut } from "lucide-react";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 const tabs = [
     { label: "Users", href: "/users" },
@@ -11,6 +17,24 @@ const tabs = [
 
 export default function AdminNav() {
     const pathname = usePathname();
+    const { getToken } = useAuth();
+    const { signOut } = useClerk();
+    const { user } = useUser();
+
+    const handleSignOut = async () => {
+        try {
+            const token = await getToken();
+            await fetch(`${API_BASE_URL}/api/admin/logout`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        } catch {
+            // best-effort — a stale admin_sessions row here is harmless
+            // housekeeping, not a security gap; see adminSessionService
+        } finally {
+            signOut({ redirectUrl: "/sign-in" });
+        }
+    };
 
     return (
         <nav className="sticky top-0 z-50 border-b border-ink/10 bg-cream">
@@ -45,6 +69,22 @@ export default function AdminNav() {
                         );
                     })}
                 </ul>
+
+                <div className="flex items-center gap-3">
+                    {user?.primaryEmailAddress?.emailAddress && (
+                        <span className="hidden text-sm text-ink/50 sm:inline">
+                            {user.primaryEmailAddress.emailAddress}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="flex items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-[13px] font-medium text-ink transition hover:bg-sand"
+                    >
+                        <LogOut className="h-3.5 w-3.5" />
+                        Sign out
+                    </button>
+                </div>
             </div>
         </nav>
     );

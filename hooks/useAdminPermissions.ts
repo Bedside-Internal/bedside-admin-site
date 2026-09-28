@@ -4,7 +4,7 @@ import { PermissionMatrix, AdminResource, AdminAction } from "@/types/admin";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-type Status = "loading" | "ready" | "forbidden" | "pending-setup" | "error";
+type Status = "loading" | "ready" | "forbidden" | "session-expired" | "pending-setup" | "error";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 800;
@@ -53,6 +53,14 @@ export function useAdminPermissions() {
         return;
       }
 
+      if (res.status === 401) {
+        const body = await res.json().catch(() => null);
+        if (body?.code === "ADMIN_SESSION_EXPIRED") {
+          setStatus("session-expired");
+          return;
+        }
+      }
+
       if (!res.ok) {
         throw new Error(`Failed to fetch admin permissions (${res.status})`);
       }
@@ -92,6 +100,7 @@ export function useAdminPermissions() {
     isLoading: status === "loading",
     isForbidden: status === "forbidden",
     isPendingSetup: status === "pending-setup",
+    isSessionExpired: status === "session-expired",
     error,
     refetch: fetchPermissions,
   };

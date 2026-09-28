@@ -1,6 +1,7 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useEffect } from "react";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import AdminNav from "@/components/layout/AdminNav";
 import type { AdminResource, AdminAction } from "@/types/admin";
@@ -22,8 +23,29 @@ export default function AdminGate({
     children,
 }: AdminGateProps) {
     const { isLoaded } = useAuth();
+    const { signOut } = useClerk();
     const perms = useAdminPermissions();
-    const { can, isLoading, isForbidden, isPendingSetup, error } = perms;
+    const { can, isLoading, isForbidden, isPendingSetup, isSessionExpired, error } = perms;
+
+    // Runs on every render regardless of which branch below fires — Rules of
+    // Hooks means this can't live inside the isSessionExpired block itself.
+    // The `isSessionExpired` guard inside makes it a no-op the rest of the
+    // time, since the server has already revoked the underlying Clerk
+    // session at this point; this just finishes the job client-side and
+    // sends the browser to sign-in instead of leaving it stuck on a spinner.
+    useEffect(() => {
+        if (isSessionExpired) {
+            signOut({ redirectUrl: "/sign-in" });
+        }
+    }, [isSessionExpired, signOut]);
+
+    if (isSessionExpired) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-cream font-dm text-ink/40">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-coral border-t-transparent" />
+            </div>
+        );
+    }
 
     if (!isLoaded || isLoading) {
         return (
