@@ -56,8 +56,11 @@ export interface UpdateAdminAccessInput {
 }
 
 export interface ApiErrorResponse {
-    error: string;
-    details?: { fieldErrors?: Record<string, string[]> }
+  error: string;
+  details?: {
+    formErrors?: string[];
+    fieldErrors?: Record<string, string[]>;
+  };
 }
 
 export type FeatureType = "track" | "format";

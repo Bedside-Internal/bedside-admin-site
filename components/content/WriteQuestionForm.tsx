@@ -3,6 +3,25 @@
 import { useState, useMemo } from "react";
 import type { Format, Section, Dimension, ScoringRubricDimension, CreateQuestionInput } from "@/types/content";
 import { RubricEditor } from "./RubricEditor";
+import { ApiError } from "@/lib/api/http";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { FieldError, FormErrorBanner } from "@/components/forms/FormErrors";
+
+const FIELD_LABELS = {
+    sectionId: "Section",
+    difficulty: "Difficulty",
+    scenarioText: "Scenario",
+    guidanceNote: "Guidance note",
+    modelAnswer: "Model answer",
+    videoUrl: "Scenario video URL",
+    responseMode: "Response mode",
+    prompts: "Prompts",
+    scoringRubric: "Scoring rubric",
+};
+
+/** Swap the normal border for a red one when a field has a problem. */
+const withError = (cls: string, hasError: boolean) =>
+    hasError ? cls.replace("border-ink/10", "border-coral").replace("focus:border-mint-500", "focus:border-coral") : cls;
 
 interface WriteQuestionFormProps {
     formats: Format[];
@@ -54,7 +73,7 @@ export function WriteQuestionForm({
         initialData?.rubricDimensions ?? [{ label: "", weight: 1 }],
     );
     const [rubricError, setRubricError] = useState<string | null>(null);
-    const [submitting, setSubmitting] = useState(false);
+    const form = useFormSubmit(FIELD_LABELS);
 
     const [prompts, setPrompts] = useState<{ text: string }[]>(
         initialData?.prompts?.length ? initialData.prompts : [{ text: "" }],
@@ -86,32 +105,45 @@ export function WriteQuestionForm({
     }, [sectionId, sections, dimensions]);
 
     const handleSubmit = async (isActive: boolean) => {
-        if (!sectionId) return;
         setRubricError(null);
-        setSubmitting(true);
-        try {
-            await onSubmit({
-                sectionId,
-                difficulty,
-                isActive,
-                scenarioText,
-                guidanceNote,
-                modelAnswer,
-                scoringRubric: { dimensions: rubricDims },
-                responseMode,
-                source: initialMeta?.source ?? "manual",
-                aiModel: initialMeta?.aiModel,
-                sourceSubmissionId: initialMeta?.sourceSubmissionId,
-                prompts: prompts.filter((p) => p.text.trim().length > 0),
-                videoUrl: videoUrl.trim() || null,
-            });
-        } catch (err: any) {
-            if (err?.status === 422) {
-                setRubricError(err?.message || "Validation error in scoring rubric.");
-            }
-        } finally {
-            setSubmitting(false);
+        // Same rules the server enforces, checked first so the message appears next to the field.
+        if (
+            form.check({
+                sectionId: sectionId ? "" : "Choose a section",
+                scenarioText: scenarioText.trim() ? "" : "Scenario is required",
+                guidanceNote: guidanceNote.trim() ? "" : "Guidance note is required",
+                modelAnswer: modelAnswer.trim() ? "" : "Model answer is required",
+            })
+        ) {
+            return;
         }
+
+        await form.run(async () => {
+            try {
+                await onSubmit({
+                    sectionId,
+                    difficulty,
+                    isActive,
+                    scenarioText,
+                    guidanceNote,
+                    modelAnswer,
+                    scoringRubric: { dimensions: rubricDims },
+                    responseMode,
+                    source: initialMeta?.source ?? "manual",
+                    aiModel: initialMeta?.aiModel,
+                    sourceSubmissionId: initialMeta?.sourceSubmissionId,
+                    prompts: prompts.filter((p) => p.text.trim().length > 0),
+                    videoUrl: videoUrl.trim() || null,
+                });
+            } catch (err) {
+                // 422 = scoring-rubric rule; it is shown inside the rubric editor.
+                if (err instanceof ApiError && err.status === 422) {
+                    setRubricError(err.message || "Validation error in scoring rubric.");
+                    return;
+                }
+                throw err;
+            }
+        });
     };
 
     const textareaClass =
@@ -129,9 +161,10 @@ export function WriteQuestionForm({
                 <div className="flex-1">
                     <label className="mb-1 block text-xs font-medium text-ink/50">Section</label>
                     <select
-                        className={`w-full ${selectClass}`}
+                        className={`w-full ${withError(selectClass, !!form.fieldError("sectionId"))}`}
                         value={sectionId}
                         onChange={(e) => {
+                            form.clearField("sectionId");
                             setSectionId(e.target.value);
                             setRubricDims([{ label: "", weight: 1 }]);
                             setRubricError(null);
@@ -150,6 +183,7 @@ export function WriteQuestionForm({
                             );
                         })}
                     </select>
+                    <FieldError message={form.fieldError("sectionId")} />
                 </div>
                 <div className="w-40">
                     <label className="mb-1 block text-xs font-medium text-ink/50">Difficulty</label>
@@ -169,32 +203,35 @@ export function WriteQuestionForm({
                 <div>
                     <label className="mb-1 block text-xs font-medium text-ink/50">Scenario</label>
                     <textarea
-                        className={textareaClass}
+                        className={withError(textareaClass, !!form.fieldError("scenarioText"))}
                         rows={5}
                         value={scenarioText}
-                        onChange={(e) => setScenarioText(e.target.value)}
+                        onChange={(e) => { setScenarioText(e.target.value); form.clearField("scenarioText"); }}
                         placeholder="Describe the scenario the candidate will see…"
                     />
+                    <FieldError message={form.fieldError("scenarioText")} />
                 </div>
                 <div>
                     <label className="mb-1 block text-xs font-medium text-ink/50">Guidance note</label>
                     <textarea
-                        className={textareaClass}
+                        className={withError(textareaClass, !!form.fieldError("guidanceNote"))}
                         rows={3}
                         value={guidanceNote}
-                        onChange={(e) => setGuidanceNote(e.target.value)}
+                        onChange={(e) => { setGuidanceNote(e.target.value); form.clearField("guidanceNote"); }}
                         placeholder="Any guidance for the candidate…"
                     />
+                    <FieldError message={form.fieldError("guidanceNote")} />
                 </div>
                 <div>
                     <label className="mb-1 block text-xs font-medium text-ink/50">Model answer</label>
                     <textarea
-                        className={textareaClass}
+                        className={withError(textareaClass, !!form.fieldError("modelAnswer"))}
                         rows={5}
                         value={modelAnswer}
-                        onChange={(e) => setModelAnswer(e.target.value)}
+                        onChange={(e) => { setModelAnswer(e.target.value); form.clearField("modelAnswer"); }}
                         placeholder="The expected model answer…"
                     />
+                    <FieldError message={form.fieldError("modelAnswer")} />
                 </div>
             </div>
 
@@ -202,11 +239,12 @@ export function WriteQuestionForm({
                 <label className="mb-1 block text-xs font-medium text-ink/50">Scenario video URL (optional)</label>
                 <input
                     type="url"
-                    className={`w-full ${textareaClass}`}
+                    className={`w-full ${withError(textareaClass, !!form.fieldError("videoUrl"))}`}
                     value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
+                    onChange={(e) => { setVideoUrl(e.target.value); form.clearField("videoUrl"); }}
                     placeholder="Leave blank for a text-only scenario"
                 />
+                <FieldError message={form.fieldError("videoUrl")} />
             </div>
 
             <div className="mt-4">
@@ -234,6 +272,7 @@ export function WriteQuestionForm({
                     </div>
                 ))}
                 <button type="button" onClick={addPrompt} className="text-xs font-semibold text-mint-600">+ Add prompt</button>
+                <FieldError message={form.fieldError("prompts")} />
             </div>
 
 
@@ -250,26 +289,28 @@ export function WriteQuestionForm({
                         setRubricDims(d);
                         setRubricError(null);
                     }}
-                    error={rubricError}
+                    error={rubricError ?? form.fieldError("scoringRubric") ?? null}
                 />
             </div>
+
+            <FormErrorBanner message={form.bannerMessage} />
 
             <div className="mt-8 flex items-center gap-3">
                 <button
                     type="button"
                     onClick={() => handleSubmit(true)}
-                    disabled={submitting || !sectionId}
+                    disabled={form.submitting}
                     className="rounded-md border border-mint-500 px-4 py-2 text-sm font-medium text-mint-600 hover:bg-mint-50 disabled:opacity-40"
                 >
-                    {submitting ? "Publishing…" : "Publish"}
+                    {form.submitting ? "Publishing…" : "Publish"}
                 </button>
                 <button
                     type="button"
                     onClick={() => handleSubmit(false)}
-                    disabled={submitting || !sectionId}
+                    disabled={form.submitting}
                     className="rounded-md border border-ink/10 px-4 py-2 text-sm font-medium text-ink/60 hover:bg-ink/5 disabled:opacity-40"
                 >
-                    {submitting ? "Saving…" : "Save as draft"}
+                    {form.submitting ? "Saving…" : "Save as draft"}
                 </button>
                 <button type="button" onClick={onCancel} className="text-sm text-mint-600 hover:text-mint-700">
                     Cancel

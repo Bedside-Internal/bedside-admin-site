@@ -1,3 +1,5 @@
+import { handleResponse } from "./http";
+
 export async function uploadImage(
     endpoint: string,
     token: string | null,
@@ -13,9 +15,5 @@ export async function uploadImage(
         body: formData,
     });
 
-    if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || "Failed to upload image");
-    }
-    return res.json();
+    return handleResponse<{ photoData: string; photoContentType: string }>(res);
 }

@@ -9,6 +9,20 @@ import type {
     TestimonialAccent,
     TestimonialAvatarImage,
 } from "@/types/marketing";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { FieldError, FormErrorBanner, inputBorder } from "@/components/forms/FormErrors";
+
+// API field name -> label shown on screen (used to name problems in the banner)
+const FIELD_LABELS = {
+    name: "Name",
+    subtitle: "Subtitle",
+    quote: "Quote",
+    audience: "Audience",
+    avatarLabel: "Avatar initials",
+    avatarImage: "Avatar photo",
+    avatarShape: "Avatar shape",
+    accent: "Accent color",
+};
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -44,7 +58,8 @@ export default function TestimonialFormModal({
         useState<TestimonialAvatarShape>("circle");
     const [accent, setAccent] = useState<TestimonialAccent>("mint");
     const [enabled, setEnabled] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const form = useFormSubmit(FIELD_LABELS);
+    const { clear: clearFormError } = form;
 
     const [avatarImage, setAvatarImage] = useState<TestimonialAvatarImage | undefined>(undefined);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -82,8 +97,9 @@ export default function TestimonialFormModal({
             }
 
             setPhotoError(null);
+            clearFormError();
         }
-    }, [open, initial]);
+    }, [open, initial, clearFormError]);
 
     useEffect(() => {
         if (!open) return;
@@ -99,10 +115,18 @@ export default function TestimonialFormModal({
     const isEdit = initial !== null;
 
     const handleSubmit = async () => {
-        if (!name.trim() || !quote.trim()) return;
-        setSubmitting(true);
-        try {
-            await onSubmit({
+        // Same rules the server enforces, checked up front so the message
+        // appears instantly, next to the field.
+        const missing = form.check({
+            name: name.trim() ? "" : "Name is required",
+            subtitle: subtitle.trim() ? "" : "Subtitle is required (e.g. \"Medical school applicant\")",
+            quote: quote.trim() ? "" : "Quote is required",
+            avatarLabel: avatarLabel.trim() ? "" : "Initials are required (1–4 letters)",
+        });
+        if (missing) return;
+
+        const ok = await form.run(() =>
+            onSubmit({
                 name: name.trim(),
                 subtitle: subtitle.trim(),
                 quote: quote.trim(),
@@ -112,11 +136,9 @@ export default function TestimonialFormModal({
                 accent,
                 enabled,
                 ...(avatarImage ? { avatarImage } : {}),
-            });
-            onClose();
-        } finally {
-            setSubmitting(false);
-        }
+            }),
+        );
+        if (ok) onClose();
     };
 
     const handlePhotoChange = async (file: File | null) => {
@@ -176,22 +198,24 @@ export default function TestimonialFormModal({
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                                onChange={(e) => { setName(e.target.value); form.clearField("name"); }}
+                                className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("name"))}`}
                             />
+                            <FieldError message={form.fieldError("name")} />
                         </div>
 
                         {/* Subtitle */}
                         <div>
                             <label className="mb-1.5 block text-[13px] font-medium text-ink">
-                                Subtitle
+                                Subtitle <span className="text-coral">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={subtitle}
-                                onChange={(e) => setSubtitle(e.target.value)}
-                                className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                                onChange={(e) => { setSubtitle(e.target.value); form.clearField("subtitle"); }}
+                                className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("subtitle"))}`}
                             />
+                            <FieldError message={form.fieldError("subtitle")} />
                         </div>
 
                         {/* Quote */}
@@ -202,9 +226,10 @@ export default function TestimonialFormModal({
                             <textarea
                                 rows={3}
                                 value={quote}
-                                onChange={(e) => setQuote(e.target.value)}
-                                className="w-full resize-none rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                                onChange={(e) => { setQuote(e.target.value); form.clearField("quote"); }}
+                                className={`w-full resize-none rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("quote"))}`}
                             />
+                            <FieldError message={form.fieldError("quote")} />
                         </div>
 
                         {/* Audience toggle */}
@@ -234,15 +259,17 @@ export default function TestimonialFormModal({
                         {/* Avatar initials */}
                         <div>
                             <label className="mb-1.5 block text-[13px] font-medium text-ink">
-                                Avatar initials
+                                Avatar initials <span className="text-coral">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={avatarLabel}
-                                onChange={(e) => setAvatarLabel(e.target.value)}
+                                onChange={(e) => { setAvatarLabel(e.target.value); form.clearField("avatarLabel"); }}
                                 placeholder="e.g. PN"
-                                className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                                maxLength={4}
+                                className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("avatarLabel"))}`}
                             />
+                            <FieldError message={form.fieldError("avatarLabel")} />
                         </div>
 
                         {/* Avatar Photo */}
@@ -287,6 +314,7 @@ export default function TestimonialFormModal({
                                 </div>
                             </div>
                             {photoError && <p className="mt-1.5 text-[12px] text-coral">{photoError}</p>}
+                            <FieldError message={form.fieldError("avatarImage")} />
                         </div>
 
                         {/* Avatar shape toggle */}
@@ -347,6 +375,8 @@ export default function TestimonialFormModal({
                         </label>
                     </div>
 
+                    <FormErrorBanner message={form.bannerMessage} />
+
                     <div className="mt-6 flex justify-end gap-2">
                         <button
                             onClick={onClose}
@@ -356,10 +386,10 @@ export default function TestimonialFormModal({
                         </button>
                         <button
                             onClick={handleSubmit}
-                            disabled={submitting || !name.trim() || !quote.trim()}
+                            disabled={form.submitting || readingPhoto}
                             className="rounded-md bg-mint px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-mint-hover disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {submitting ? "Saving…" : isEdit ? "Save" : "Add"}
+                            {form.submitting ? "Saving…" : isEdit ? "Save" : "Add"}
                         </button>
                     </div>
                 </div>

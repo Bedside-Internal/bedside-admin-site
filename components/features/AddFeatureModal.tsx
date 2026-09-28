@@ -3,6 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { IconPicker } from "./IconPicker";
 import type { FeatureType, AdminFeature } from "@/types/admin";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { FieldError, FormErrorBanner, inputBorder } from "@/components/forms/FormErrors";
+
+const FIELD_LABELS = {
+  title: "Title",
+  subtitle: "Description",
+  href: "Href",
+  parent_track: "Parent Track",
+  icon: "Icon",
+};
 
 interface AddFeatureModalProps {
   open: boolean;
@@ -52,13 +62,13 @@ export function AddFeatureModal({
   const [icon, setIcon] = useState("help-circle");
   const [href, setHref] = useState("");
   const [parentTrack, setParentTrack] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const form = useFormSubmit(FIELD_LABELS);
+  const { clear: clearFormError } = form;
   const titleRef = useRef<HTMLInputElement>(null);
 
   const isTrack = type === "track";
   const label = isTrack ? "Track" : "Format";
-  const canSubmit =
-    title.trim() && (isTrack || parentTrack) && !submitting;
+  const canSubmit = !form.submitting;
 
   useEffect(() => {
     if (open) {
@@ -67,9 +77,10 @@ export function AddFeatureModal({
       setIcon("help-circle");
       setHref("");
       setParentTrack(tracks.length === 1 ? tracks[0]._id : "");
+      clearFormError();
       setTimeout(() => titleRef.current?.focus(), 50);
     }
-  }, [open, tracks]);
+  }, [open, tracks, clearFormError]);
 
   useEffect(() => {
     if (!open) return;
@@ -84,12 +95,17 @@ export function AddFeatureModal({
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    setSubmitting(true);
-    try {
-      const existingKeys = tracks.map((f) => f._id);
-      const key = generateUniqueKey(title.trim(), existingKeys);
+    const missing = form.check({
+      title: title.trim() ? "" : `${label} title is required`,
+      parent_track: isTrack || parentTrack ? "" : "Choose which track this format belongs to",
+    });
+    if (missing) return;
 
-      await onSubmit({
+    const existingKeys = tracks.map((f) => f._id);
+    const key = generateUniqueKey(title.trim(), existingKeys);
+
+    const ok = await form.run(() =>
+      onSubmit({
         key,
         type,
         title: title.trim(),
@@ -98,14 +114,9 @@ export function AddFeatureModal({
         href: isTrack ? href.trim() || null : null,
         parent_track: !isTrack ? parentTrack || null : null,
         enabled: false,
-      });
-
-      onClose();
-    } catch {
-      // Error handled by parent
-    } finally {
-      setSubmitting(false);
-    }
+      }),
+    );
+    if (ok) onClose();
   };
 
   return (
@@ -129,13 +140,14 @@ export function AddFeatureModal({
               ref={titleRef}
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => { setTitle(e.target.value); form.clearField("title"); }}
               placeholder={`e.g. New ${label}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSubmit();
               }}
-              className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+              className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("title"))}`}
             />
+            <FieldError message={form.fieldError("title")} />
           </div>
 
           <div>
@@ -145,13 +157,14 @@ export function AddFeatureModal({
             <input
               type="text"
               value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
+              onChange={(e) => { setSubtitle(e.target.value); form.clearField("subtitle"); }}
               placeholder="Brief description…"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSubmit();
               }}
-              className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+              className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("subtitle"))}`}
             />
+            <FieldError message={form.fieldError("subtitle")} />
           </div>
 
           {isTrack && (
@@ -162,13 +175,14 @@ export function AddFeatureModal({
               <input
                 type="text"
                 value={href}
-                onChange={(e) => setHref(e.target.value)}
+                onChange={(e) => { setHref(e.target.value); form.clearField("href"); }}
                 placeholder="/onboarding/…"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSubmit();
                 }}
-                className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 font-mono text-[13px] text-ink outline-none transition-colors focus:border-mint"
+                className={`w-full rounded-md border bg-white px-3 py-2 font-mono text-[13px] text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("href"))}`}
               />
+              <FieldError message={form.fieldError("href")} />
             </div>
           )}
 
@@ -179,8 +193,8 @@ export function AddFeatureModal({
               </label>
               <select
                 value={parentTrack}
-                onChange={(e) => setParentTrack(e.target.value)}
-                className="w-full cursor-pointer rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                onChange={(e) => { setParentTrack(e.target.value); form.clearField("parent_track"); }}
+                className={`w-full cursor-pointer rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("parent_track"))}`}
               >
                 <option value="">— select track —</option>
                 {tracks.map((t) => (
@@ -189,6 +203,7 @@ export function AddFeatureModal({
                   </option>
                 ))}
               </select>
+              <FieldError message={form.fieldError("parent_track")} />
             </div>
           )}
 
@@ -197,8 +212,11 @@ export function AddFeatureModal({
               Icon
             </label>
             <IconPicker value={icon} onChange={setIcon} />
+            <FieldError message={form.fieldError("icon")} />
           </div>
         </div>
+
+        <FormErrorBanner message={form.bannerMessage} />
 
         <div className="mt-6 flex justify-end gap-2">
           <button
@@ -216,7 +234,7 @@ export function AddFeatureModal({
                 : "cursor-default bg-ink/25"
             }`}
           >
-            {submitting ? "Adding…" : `Add ${label}`}
+            {form.submitting ? "Adding…" : `Add ${label}`}
           </button>
         </div>
       </div>

@@ -5,7 +5,6 @@ import {
     UpdateRoleInput,
     GrantAdminAccessInput,
     UpdateAdminAccessInput,
-    ApiErrorResponse,
     AdminFeature,
     FeatureType,
     UpsertFeatureInput
@@ -13,17 +12,8 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function handleResponse<T>(res: Response): Promise<T> {
-    if (!res.ok) {
-        const errData: ApiErrorResponse = await res.json().catch(() => ({
-            error: "Request failed",
-        }));
-        const fieldMsg = Object.values(errData.details?.fieldErrors ?? {}).flat()[0];
-        throw new Error(fieldMsg || errData.error || `HTTP ${res.status}`);
-    }
-    if (res.status === 204) return undefined as T;
-    return res.json();
-}
+export { handleResponse, ApiError } from "./http";
+import { handleResponse } from "./http";
 
 // role management 
 export async function listRoles(token: string | null): Promise<AdminRole[]> {

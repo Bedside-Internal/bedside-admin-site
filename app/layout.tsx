@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dmSans, instrumentSerif, poppins } from "@/lib/fonts";
 import { Toaster } from "sonner";
+import GlobalErrorToaster from "@/components/forms/GlobalErrorToaster";
 import IdleSessionGuard from "@/components/layout/IdleSessionGuard";
 
 const geistSans = Geist({
@@ -45,7 +46,12 @@ export default function RootLayout({
         <body className="font-dm bg-cream text-ink antialiased">
           {children}
           <IdleSessionGuard idleMinutes={15} warnMinutes={1} />
-          <Toaster richColors position="top-right" />
+          <GlobalErrorToaster />
+          <Toaster
+            richColors
+            position="top-right"
+            toastOptions={{ classNames: { title: "whitespace-pre-line" } }}
+          />
         </body>
       </html>
     </ClerkProvider>

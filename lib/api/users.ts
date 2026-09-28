@@ -1,23 +1,22 @@
+import { ApiError, toApiError } from "./http";
 import {
     AdminUserDTO,
     UpdateUserPayload,
     GrantAttemptsPayload,
-    ApiErrorResponse,
     ListUsersResponse,
 } from "@/types/user";
 
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-export class ApiError extends Error {
-    status: number;
-    constructor(message: string, status: number) {
-        super(message);
-        this.name = "ApiError";
-        this.status = status;
-    }
-}
+export { ApiError };
 
+/**
+ * Users-page wrapper around the shared handler. Keeps the two special cases
+ * this page relies on (expired session redirect, friendly copy for the
+ * admin-sync 404 / not-an-admin 403) but otherwise surfaces the server's own
+ * message and per-field validation errors like every other admin call.
+ */
 async function handleResponse<T>(res: Response): Promise<T> {
     // 401: Session expired/revoked. Hard redirect to root login.
     if (res.status === 401) {
@@ -27,26 +26,20 @@ async function handleResponse<T>(res: Response): Promise<T> {
         throw new ApiError("Session expired", 401);
     }
 
-    // 403: Authenticated, but not an admin. Show access denied UI.
-    if (res.status === 403) {
-        throw new ApiError("You do not have admin access", 403);
-    }
-
-    // 404: Account pending Clerk webhook sync. Show setup UI.
-    if (res.status === 404) {
-        throw new ApiError("Account pending setup", 404);
-    }
-
-    // Other errors (400, 500, etc.)
     if (!res.ok) {
-        const errData: ApiErrorResponse = await res.json().catch(() => ({
-            error: "Request failed",
-        }));
-        const fieldMsg = Object.values(errData.details?.fieldErrors ?? {}).flat()[0];
-        throw new ApiError(fieldMsg || errData.error || `HTTP ${res.status}`, res.status);
+        const err = await toApiError(res);
+        // requireAdmin: caller is authenticated but not an admin.
+        if (res.status === 403 && err.message === "Not an admin") {
+            err.message = "You do not have admin access";
+        }
+        // requireAdmin: caller's own row hasn't synced from Clerk yet. A 404
+        // from a route handler (e.g. "User not found") keeps its own message.
+        if (res.status === 404 && /account sync/i.test(err.message)) {
+            err.message = "Account pending setup";
+        }
+        throw err;
     }
 
-    // Handle 204 No Content
     if (res.status === 204) return undefined as T;
     return res.json();
 }

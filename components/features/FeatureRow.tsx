@@ -4,7 +4,18 @@ import { useState } from "react";
 import { GripVertical } from "lucide-react";
 import { resolveIcon } from "@/lib/iconRegistry";
 import { IconPicker } from "./IconPicker";
+import { toast } from "sonner";
 import type { AdminFeature, UpsertFeatureInput, FeatureType } from "@/types/admin";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { inputBorder } from "@/components/forms/FormErrors";
+
+const FIELD_LABELS = {
+  title: "Title",
+  subtitle: "Description",
+  href: "Href",
+  parent_track: "Track",
+  icon: "Icon",
+};
 
 interface FeatureRowProps {
   feature: AdminFeature;
@@ -35,7 +46,7 @@ export function FeatureRow({
   const [editIcon, setEditIcon] = useState("");
   const [editHref, setEditHref] = useState("");
   const [editParentTrack, setEditParentTrack] = useState("");
-  const [saving, setSaving] = useState(false);
+  const form = useFormSubmit(FIELD_LABELS);
   const [showKillModal, setShowKillModal] = useState(false);
   const [killReason, setKillReason] = useState("");
   const [killError, setKillError] = useState("");
@@ -52,15 +63,25 @@ export function FeatureRow({
     setEditIcon(feature.icon);
     setEditHref(feature.href || "");
     setEditParentTrack(feature.parent_track || "");
+    form.clear();
     setIsEditing(true);
   };
 
-  const handleCancelEdit = () => setIsEditing(false);
+  const handleCancelEdit = () => {
+    form.clear();
+    setIsEditing(false);
+  };
 
   const handleSave = async () => {
-    if (!editTitle.trim()) return;
-    setSaving(true);
-    try {
+    if (
+      form.check({
+        title: editTitle.trim() ? "" : "Title is required",
+        parent_track: isTrack || editParentTrack ? "" : "Choose a track",
+      })
+    )
+      return;
+
+    const ok = await form.run(async () => {
       const data: UpsertFeatureInput = {
         type: feature.type,
         title: editTitle.trim(),
@@ -75,12 +96,8 @@ export function FeatureRow({
         data.parent_track = editParentTrack || null;
       }
       await onSave(feature._id, data);
-      setIsEditing(false);
-    } catch {
-      // Error handled by parent
-    } finally {
-      setSaving(false);
-    }
+    });
+    if (ok) setIsEditing(false);
   };
 
   const handleKill = async () => {
@@ -93,16 +110,16 @@ export function FeatureRow({
       setShowKillModal(false);
       setKillReason("");
       setKillError("");
-    } catch {
-      // Error handled by parent
+    } catch (err) {
+      setKillError(err instanceof Error ? err.message : "Couldn't kill this feature. Please try again.");
     }
   };
 
   const handleRestore = async () => {
     try {
       await onRestore(feature._id);
-    } catch {
-      // Error handled by parent
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't restore this feature. Please try again.");
     }
   };
 
@@ -146,8 +163,8 @@ export function FeatureRow({
             {isEditing ? (
               <select
                 value={editParentTrack}
-                onChange={(e) => setEditParentTrack(e.target.value)}
-                className="w-full cursor-pointer rounded-md border border-ink/15 bg-white px-2 py-1 text-[13px] font-dm text-ink outline-none focus:border-mint"
+                onChange={(e) => { setEditParentTrack(e.target.value); form.clearField("parent_track"); }}
+                className={`w-full cursor-pointer rounded-md border bg-white px-2 py-1 text-[13px] font-dm text-ink outline-none ${inputBorder(!!form.fieldError("parent_track"))}`}
               >
                 <option value="">— select track —</option>
                 {tracks.map((t) => (
@@ -170,13 +187,13 @@ export function FeatureRow({
             <input
               type="text"
               value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
+              onChange={(e) => { setEditTitle(e.target.value); form.clearField("title"); }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancelEdit();
               }}
               autoFocus
-              className="w-full rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+              className={`w-full rounded-md border bg-white px-3 py-1.5 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("title"))}`}
             />
           ) : (
             <span className="flex items-center gap-2">
@@ -196,13 +213,13 @@ export function FeatureRow({
             <input
               type="text"
               value={editSubtitle}
-              onChange={(e) => setEditSubtitle(e.target.value)}
+              onChange={(e) => { setEditSubtitle(e.target.value); form.clearField("subtitle"); }}
               placeholder="Description…"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSave();
                 if (e.key === "Escape") handleCancelEdit();
               }}
-              className="w-full rounded-md border border-ink/15 bg-white px-3 py-1.5 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+              className={`w-full rounded-md border bg-white px-3 py-1.5 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("subtitle"))}`}
             />
           ) : (
             <span
@@ -222,13 +239,13 @@ export function FeatureRow({
               <input
                 type="text"
                 value={editHref}
-                onChange={(e) => setEditHref(e.target.value)}
+                onChange={(e) => { setEditHref(e.target.value); form.clearField("href"); }}
                 placeholder="/onboarding/…"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSave();
                   if (e.key === "Escape") handleCancelEdit();
                 }}
-                className="w-full rounded-md border border-ink/15 bg-white px-3 py-1.5 font-mono text-xs text-ink outline-none transition-colors focus:border-mint"
+                className={`w-full rounded-md border bg-white px-3 py-1.5 font-mono text-xs text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("href"))}`}
               />
             ) : (
               <span
@@ -263,9 +280,9 @@ export function FeatureRow({
             <>
               <ActionLink
                 onClick={handleSave}
-                disabled={saving || !editTitle.trim()}
+                disabled={form.submitting}
               >
-                {saving ? "Saving…" : "Save"}
+                {form.submitting ? "Saving…" : "Save"}
               </ActionLink>
               <ActionLink onClick={handleCancelEdit}>Cancel</ActionLink>
             </>
@@ -292,6 +309,15 @@ export function FeatureRow({
           )}
         </div>
       </div>
+
+      {isEditing && form.summary && (
+        <div
+          role="alert"
+          className="whitespace-pre-line border-b border-ink/10 bg-coral/[0.06] px-14 py-2 text-[12px] font-medium text-coral"
+        >
+          {form.summary}
+        </div>
+      )}
 
       {/* Kill confirm modal */}
       {showKillModal && (

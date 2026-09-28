@@ -1,5 +1,6 @@
 "use client";
 
+import { toastError } from "@/lib/toastError";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
@@ -44,6 +45,8 @@ export default function FormatsContent() {
         try {
             await remove(deleteTarget.id);
             setDeleteTarget(null);
+        } catch (err) {
+            toastError(err, "Couldn't delete that. Please try again.");
         } finally {
             setDeleting(false);
         }

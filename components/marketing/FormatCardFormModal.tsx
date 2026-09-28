@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from "react";
 import type { AdminFormatCard, CreateFormatCardInput, FormatCardAccent } from "@/types/marketing";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { FieldError, FormErrorBanner, inputBorder } from "@/components/forms/FormErrors";
+
+const FIELD_LABELS = {
+    title: "Title",
+    description: "Description",
+    accent: "Accent color",
+};
 
 const accents: { value: FormatCardAccent; color: string }[] = [
     { value: "mint", color: "bg-mint" },
@@ -27,7 +35,8 @@ export default function FormatCardFormModal({
     const [description, setDescription] = useState("");
     const [accent, setAccent] = useState<FormatCardAccent>("mint");
     const [enabled, setEnabled] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const form = useFormSubmit(FIELD_LABELS);
+    const { clear: clearFormError } = form;
 
     useEffect(() => {
         if (open) {
@@ -42,8 +51,9 @@ export default function FormatCardFormModal({
                 setAccent("mint");
                 setEnabled(true);
             }
+            clearFormError();
         }
-    }, [open, initial]);
+    }, [open, initial, clearFormError]);
 
     useEffect(() => {
         if (!open) return;
@@ -59,19 +69,21 @@ export default function FormatCardFormModal({
     const isEdit = initial !== null;
 
     const handleSubmit = async () => {
-        if (!title.trim() || !description.trim()) return;
-        setSubmitting(true);
-        try {
-            await onSubmit({
+        const missing = form.check({
+            title: title.trim() ? "" : "Title is required",
+            description: description.trim() ? "" : "Description is required",
+        });
+        if (missing) return;
+
+        const ok = await form.run(() =>
+            onSubmit({
                 title: title.trim(),
                 description: description.trim(),
                 accent,
                 enabled,
-            });
-            onClose();
-        } finally {
-            setSubmitting(false);
-        }
+            }),
+        );
+        if (ok) onClose();
     };
 
     return (
@@ -94,9 +106,10 @@ export default function FormatCardFormModal({
                         <input
                             type="text"
                             value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="w-full rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                            onChange={(e) => { setTitle(e.target.value); form.clearField("title"); }}
+                            className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("title"))}`}
                         />
+                        <FieldError message={form.fieldError("title")} />
                     </div>
 
                     <div>
@@ -106,9 +119,10 @@ export default function FormatCardFormModal({
                         <textarea
                             rows={3}
                             value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            className="w-full resize-none rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors focus:border-mint"
+                            onChange={(e) => { setDescription(e.target.value); form.clearField("description"); }}
+                            className={`w-full resize-none rounded-md border bg-white px-3 py-2 text-sm font-dm text-ink outline-none transition-colors ${inputBorder(!!form.fieldError("description"))}`}
                         />
+                        <FieldError message={form.fieldError("description")} />
                     </div>
 
                     <div>
@@ -142,6 +156,8 @@ export default function FormatCardFormModal({
                     </label>
                 </div>
 
+                <FormErrorBanner message={form.bannerMessage} />
+
                 <div className="mt-6 flex justify-end gap-2">
                     <button
                         onClick={onClose}
@@ -151,10 +167,10 @@ export default function FormatCardFormModal({
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={submitting || !title.trim() || !description.trim()}
+                        disabled={form.submitting}
                         className="rounded-md bg-mint px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-mint-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {submitting ? "Saving…" : isEdit ? "Save" : "Add"}
+                        {form.submitting ? "Saving…" : isEdit ? "Save" : "Add"}
                     </button>
                 </div>
             </div>

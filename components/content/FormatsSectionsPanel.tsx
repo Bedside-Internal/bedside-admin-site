@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { Format, Dimension, Section } from "@/types/content";
 
 
@@ -169,13 +170,17 @@ function FormatsTable({
         delete n[f.id];
         return n;
       });
-    } catch {
-      /* handled by hook */
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save. Please try again.");
     }
   };
 
   const saveNew = async () => {
-    if (!newRow || !newRow.title.trim() || !newRow.slug.trim()) return;
+    if (!newRow) return;
+    if (!newRow.title.trim() || !newRow.slug.trim()) {
+      toast.error("Please fill in both the title and the slug.");
+      return;
+    }
     try {
       await onSave({
         slug: newRow.slug,
@@ -184,8 +189,8 @@ function FormatsTable({
         iconKey: newRow.iconKey || undefined,
       });
       setNewRow(null);
-    } catch {
-      /* handled by hook */
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save. Please try again.");
     }
   };
 
@@ -437,14 +442,17 @@ function DimensionsTable({
         delete n[d.id];
         return n;
       });
-    } catch {
-      /* handled by hook */
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save. Please try again.");
     }
   };
 
   const saveNew = async () => {
-    if (!newRow || !newRow.formatId || !newRow.label.trim() || !newRow.slug.trim())
+    if (!newRow) return;
+    if (!newRow.formatId || !newRow.label.trim() || !newRow.slug.trim()) {
+      toast.error("Please choose a format and fill in both the label and the slug.");
       return;
+    }
     try {
       await onSave({
         formatId: newRow.formatId,
@@ -455,8 +463,8 @@ function DimensionsTable({
         sortOrder: newRow.sortOrder ? Number(newRow.sortOrder) : undefined,
       });
       setNewRow(null);
-    } catch {
-      /* handled by hook */
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save. Please try again.");
     }
   };
 
@@ -724,11 +732,17 @@ function SectionsTable({
         sortOrder: e.sortOrder !== undefined ? Number(e.sortOrder) : s.sortOrder,
       });
       setEdits((p) => { const n = { ...p }; delete n[s.id]; return n; });
-    } catch { /* handled by hook */ }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save. Please try again.");
+    }
   };
 
   const saveNew = async () => {
-    if (!newRow || !newRow.formatId || !newRow.title.trim() || !newRow.slug.trim()) return;
+    if (!newRow) return;
+    if (!newRow.formatId || !newRow.title.trim() || !newRow.slug.trim()) {
+      toast.error("Please choose a format and fill in both the title and the slug.");
+      return;
+    }
     try {
       await onSave({
         formatId: newRow.formatId,
@@ -741,7 +755,9 @@ function SectionsTable({
         sortOrder: newRow.sortOrder ? Number(newRow.sortOrder) : undefined,
       });
       setNewRow(null);
-    } catch { /* handled by hook */ }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save. Please try again.");
+    }
   };
 
   return (

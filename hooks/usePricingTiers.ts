@@ -1,5 +1,6 @@
 "use client";
 
+import { toastError } from "@/lib/toastError";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import * as api from "@/lib/api/pricing";
@@ -43,8 +44,12 @@ export function usePricingTiers() {
 
     const update = useCallback(
         async (id: string, input: Partial<CreatePricingTierInput>) => {
-            const token = await getToken();
-            replaceTier(await api.updatePricingTier(token, id, input));
+            try {
+                const token = await getToken();
+                replaceTier(await api.updatePricingTier(token, id, input));
+            } catch (err) {
+                toastError(err, "Couldn't save that change. Please try again.");
+            }
         },
         [getToken]
     );
@@ -92,8 +97,12 @@ export function usePricingTiers() {
 
     const addFeature = useCallback(
         async (id: string, input: CreateFeatureInput) => {
-            const token = await getToken();
-            replaceTier(await api.addFeature(token, id, input));
+            try {
+                const token = await getToken();
+                replaceTier(await api.addFeature(token, id, input));
+            } catch (err) {
+                toastError(err, "Couldn't add that feature. Please try again.");
+            }
         },
         [getToken]
     );
@@ -104,7 +113,7 @@ export function usePricingTiers() {
                 const token = await getToken();
                 replaceTier(await api.updateFeature(token, id, featureId, input));
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to update feature");
+                toastError(err, "Couldn't save that feature. Please try again.");
             }
         },
         [getToken]
@@ -112,32 +121,48 @@ export function usePricingTiers() {
 
     const removeFeature = useCallback(
         async (id: string, featureId: string) => {
-            const token = await getToken();
-            replaceTier(await api.deleteFeature(token, id, featureId));
+            try {
+                const token = await getToken();
+                replaceTier(await api.deleteFeature(token, id, featureId));
+            } catch (err) {
+                toastError(err, "Couldn't remove that feature. Please try again.");
+            }
         },
         [getToken]
     );
 
     const addBillingCycle = useCallback(
         async (id: string, input: CreateBillingCycleInput) => {
-            const token = await getToken();
-            replaceTier(await api.addBillingCycle(token, id, input));
+            try {
+                const token = await getToken();
+                replaceTier(await api.addBillingCycle(token, id, input));
+            } catch (err) {
+                toastError(err, "Couldn't add that billing cycle. Please try again.");
+            }
         },
         [getToken]
     );
 
     const updateBillingCycle = useCallback(
         async (id: string, cycleId: string, input: Partial<CreateBillingCycleInput>) => {
-            const token = await getToken();
-            replaceTier(await api.updateBillingCycle(token, id, cycleId, input));
+            try {
+                const token = await getToken();
+                replaceTier(await api.updateBillingCycle(token, id, cycleId, input));
+            } catch (err) {
+                toastError(err, "Couldn't save that billing cycle. Please try again.");
+            }
         },
         [getToken]
     );
 
     const removeBillingCycle = useCallback(
         async (id: string, cycleId: string) => {
-            const token = await getToken();
-            replaceTier(await api.deleteBillingCycle(token, id, cycleId));
+            try {
+                const token = await getToken();
+                replaceTier(await api.deleteBillingCycle(token, id, cycleId));
+            } catch (err) {
+                toastError(err, "Couldn't remove that billing cycle. Please try again.");
+            }
         },
         [getToken]
     );

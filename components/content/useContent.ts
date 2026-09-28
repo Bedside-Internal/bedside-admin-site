@@ -103,27 +103,19 @@ export function useContent() {
             iconKey?: string;
             trackId?: string;
         }) => {
-            try {
-                const token = await tk();
-                const result = data.id
-                    ? await api.patchFormat(token, data.id, data)
-                    : await api.createFormat(token, data);
-                setState((s) => {
-                    const idx = s.formats.findIndex((f) => f.id === result.id);
-                    const next =
-                        idx >= 0
-                            ? s.formats.map((f) => (f.id === result.id ? result : f))
-                            : [...s.formats, result];
-                    return { ...s, formats: next };
-                });
-                return result;
-            } catch (err: any) {
-                setState((s) => ({
-                    ...s,
-                    error: err?.message || "Failed to save format",
-                }));
-                throw err;
-            }
+            const token = await tk();
+            const result = data.id
+                ? await api.patchFormat(token, data.id, data)
+                : await api.createFormat(token, data);
+            setState((s) => {
+                const idx = s.formats.findIndex((f) => f.id === result.id);
+                const next =
+                    idx >= 0
+                        ? s.formats.map((f) => (f.id === result.id ? result : f))
+                        : [...s.formats, result];
+                return { ...s, formats: next };
+            });
+            return result;
         },
         [tk],
     );
@@ -180,27 +172,19 @@ export function useContent() {
             iconKey?: string;
             sortOrder?: number;
         }) => {
-            try {
-                const token = await tk();
-                const result = data.id
-                    ? await api.patchDimension(token, data.id, data)
-                    : await api.createDimension(token, data);
-                setState((s) => {
-                    const idx = s.dimensions.findIndex((d) => d.id === result.id);
-                    const next =
-                        idx >= 0
-                            ? s.dimensions.map((d) => (d.id === result.id ? result : d))
-                            : [...s.dimensions, result];
-                    return { ...s, dimensions: next };
-                });
-                return result;
-            } catch (err: any) {
-                setState((s) => ({
-                    ...s,
-                    error: err?.message || "Failed to save dimension",
-                }));
-                throw err;
-            }
+            const token = await tk();
+            const result = data.id
+                ? await api.patchDimension(token, data.id, data)
+                : await api.createDimension(token, data);
+            setState((s) => {
+                const idx = s.dimensions.findIndex((d) => d.id === result.id);
+                const next =
+                    idx >= 0
+                        ? s.dimensions.map((d) => (d.id === result.id ? result : d))
+                        : [...s.dimensions, result];
+                return { ...s, dimensions: next };
+            });
+            return result;
         },
         [tk],
     );
@@ -262,29 +246,21 @@ export function useContent() {
             iconKey?: string;
             sortOrder?: number;
         }) => {
-            try {
-                const token = await tk();
-                const result = data.id
-                    ? await api.patchSection(token, data.id, data)
-                    : await api.createSection(token, data);
-                setState((s) => {
-                    const idx = s.sections.findIndex((sec) => sec.id === result.id);
-                    const next =
-                        idx >= 0
-                            ? s.sections.map((sec) =>
-                                sec.id === result.id ? result : sec,
-                            )
-                            : [...s.sections, result];
-                    return { ...s, sections: next };
-                });
-                return result;
-            } catch (err: any) {
-                setState((s) => ({
-                    ...s,
-                    error: err?.message || "Failed to save section",
-                }));
-                throw err;
-            }
+            const token = await tk();
+            const result = data.id
+                ? await api.patchSection(token, data.id, data)
+                : await api.createSection(token, data);
+            setState((s) => {
+                const idx = s.sections.findIndex((sec) => sec.id === result.id);
+                const next =
+                    idx >= 0
+                        ? s.sections.map((sec) =>
+                            sec.id === result.id ? result : sec,
+                        )
+                        : [...s.sections, result];
+                return { ...s, sections: next };
+            });
+            return result;
         },
         [tk],
     );
@@ -358,35 +334,24 @@ export function useContent() {
 
     const createQuestion = useCallback(
         async (data: CreateQuestionInput) => {
-            try {
-                const token = await tk();
-                const result = await api.createQuestion(token, data);
-                setState((s) => ({
-                    ...s,
-                    questions: [
-                        ...s.questions,
-                        {
-                            id: result.id,
-                            formatTitle: result.formatTitle,
-                            sectionTitle: result.sectionTitle,
-                            difficulty: result.difficulty,
-                            isActive: result.isActive,
-                            hasScenario: !!result.scenarioText,
-                            rubricDimensionCount: result.scoringRubric.dimensions.length,
-                        },
-                    ],
-                }));
-                return result;
-            } catch (err: any) {
-                // 422 is shown inline by the form — skip global banner
-                if (err?.status !== 422) {
-                    setState((s) => ({
-                        ...s,
-                        error: err?.message || "Failed to create question",
-                    }));
-                }
-                throw err;
-            }
+            const token = await tk();
+            const result = await api.createQuestion(token, data);
+            setState((s) => ({
+                ...s,
+                questions: [
+                    ...s.questions,
+                    {
+                        id: result.id,
+                        formatTitle: result.formatTitle,
+                        sectionTitle: result.sectionTitle,
+                        difficulty: result.difficulty,
+                        isActive: result.isActive,
+                        hasScenario: !!result.scenarioText,
+                        rubricDimensionCount: result.scoringRubric.dimensions.length,
+                    },
+                ],
+            }));
+            return result;
         },
         [tk],
     );

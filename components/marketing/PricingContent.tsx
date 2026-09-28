@@ -1,5 +1,6 @@
 "use client";
 
+import { toastError } from "@/lib/toastError";
 import { useState } from "react";
 import { Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
@@ -20,20 +21,27 @@ export default function PricingContent() {
     const [deleting, setDeleting] = useState(false);
 
     const handleCreate = async () => {
-        if (!newTitle.trim()) return;
-        await add({
-            title: newTitle.trim(),
-            featured: false,
-            price: 0,
-            periodLabel: "",
-            priceNote: "",
-            badge: null,
-            buttonLabel: "Get started →",
-            defaultCycleMonths: null,
-            enabled: true,
-        });
-        setNewTitle("");
-        setCreating(false);
+        if (!newTitle.trim()) {
+            toastError(null, "Please enter a title for the new tier.");
+            return;
+        }
+        try {
+            await add({
+                title: newTitle.trim(),
+                featured: false,
+                price: 0,
+                periodLabel: "",
+                priceNote: "",
+                badge: null,
+                buttonLabel: "Get started →",
+                defaultCycleMonths: null,
+                enabled: true,
+            });
+            setNewTitle("");
+            setCreating(false);
+        } catch (err) {
+            toastError(err, "Couldn't create that tier. Please try again.");
+        }
     };
 
     const handleDeleteConfirm = async () => {
@@ -42,6 +50,8 @@ export default function PricingContent() {
         try {
             await remove(deleteTarget.id);
             setDeleteTarget(null);
+        } catch (err) {
+            toastError(err, "Couldn't delete that. Please try again.");
         } finally {
             setDeleting(false);
         }
