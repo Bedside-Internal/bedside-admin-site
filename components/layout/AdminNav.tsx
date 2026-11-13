@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth, useClerk, useUser } from "@clerk/nextjs";
 import { LogOut } from "lucide-react";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -20,6 +21,8 @@ export default function AdminNav() {
     const { getToken } = useAuth();
     const { signOut } = useClerk();
     const { user } = useUser();
+    const { can } = useAdminPermissions();
+    const visibleTabs = can("notifications", "read") ? [...tabs, { label: "Notifications", href: "/notifications" }] : tabs;
 
     const handleSignOut = async () => {
         try {
@@ -38,7 +41,7 @@ export default function AdminNav() {
 
     return (
         <nav className="sticky top-0 z-50 border-b border-ink/10 bg-cream">
-            <div className="mx-auto flex h-14 max-w-8xl items-center justify-between px-4">
+            <div className="mx-auto flex min-h-14 max-w-8xl flex-wrap items-center justify-between gap-y-2 px-4 py-2 lg:h-14 lg:flex-nowrap lg:py-0">
                 <div className="flex items-center gap-3">
                     <span className="font-poppins text-lg font-bold text-ink">
                         Bedside Admin
@@ -48,14 +51,14 @@ export default function AdminNav() {
                     </span>
                 </div>
 
-                <ul className="flex items-center gap-1">
-                    {tabs.map((tab) => {
+                <ul className="order-last flex w-full items-center gap-1 overflow-x-auto lg:order-none lg:w-auto">
+                    {visibleTabs.map((tab) => {
                         const isActive = pathname === tab.href || pathname?.startsWith(tab.href + "/");
                         return (
                             <li key={tab.href}>
                                 <Link
                                     href={tab.href}
-                                    className={`relative px-3 py-4 text-sm font-medium transition-colors ${isActive
+                                    className={`relative block whitespace-nowrap px-3 py-4 text-sm font-medium transition-colors ${isActive
                                             ? "text-mint"
                                             : "text-ink/50 hover:text-ink"
                                         }`}

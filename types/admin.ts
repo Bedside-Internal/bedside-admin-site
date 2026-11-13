@@ -5,7 +5,8 @@ export type AdminResource =
     | "feature_flags"
     | "billing"
     | "admin_management"
-    | "marketing";
+    | "marketing"
+    | "notifications";
 
 export type AdminAction = "read" | "write" | "delete";
 
